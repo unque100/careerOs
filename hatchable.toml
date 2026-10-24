@@ -115,3 +115,7 @@ write = "member"
 [db.tables.dsa_problems]
 read = "public"
 write = "member"
+
+[db.tables.venture_plans]
+read = "own"
+write = "own"

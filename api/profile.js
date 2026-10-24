@@ -2,7 +2,7 @@ import { db } from 'hatchable';
 import { clean, logActivity } from 'lib/career.js';
 export const access = 'user';
 export const methods = ['GET','POST','PUT'];
-const stages=new Set(['student','fresh_graduate','working_professional','job_seeker','career_switcher','promotion_seeker']);
+const stages=new Set(['student','fresh_graduate','working_professional','job_seeker','career_switcher','promotion_seeker','entrepreneur','founder']);
 const styles=new Set(['reading','videos','practice','projects','mixed']);
 const prefs=new Set(['onsite','hybrid','remote','flexible']);
 export default async function(req,res){
