@@ -152,7 +152,7 @@ export default async function(req, res) {
     const matchLocation = !ll || /remote|worldwide|anywhere/i.test(ll) && j.remote || haystack.includes(ll);
     const roleMeta = [j.title, j.employmentType, j.seniority, ...(j.tags || [])].join(' ').toLowerCase();
     const matchStage = !stage || stage === 'any' || (stage === 'student'
-      ? /intern|entry[- ]level|junior|graduate|trainee|apprentice|student|early career/i.test(roleMeta)
+      ? /\bintern(?:ship)?\b|\bentry[- ]level\b|\bjunior\b|\bgraduate\b|\btrainee\b|\bapprentice\b|\bstudent\b|\bearly career\b/i.test(roleMeta)
       : stage === 'professional'
         ? !/internship|student only/i.test(roleMeta)
         : stage === 'entrepreneur'
