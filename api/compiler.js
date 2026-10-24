@@ -6,7 +6,7 @@ export const methods = ['POST'];
 
 const JUDGE0 = 'https://ce.judge0.com';
 const MAX_CODE = 24000, MAX_STDIN = 10000, MAX_EXPECTED = 10000;
-const MAX_POLLS = 12, POLL_DELAY_MS = 300;
+const MAX_POLLS = 3, POLL_DELAY_MS = 200;
 const LANGUAGES = {
   cpp: { id: 105, name: 'C++ (GCC 14.1)' },
   c: { id: 103, name: 'C (GCC 14.1)' },
@@ -79,7 +79,7 @@ export default async function(req, res) {
     const owner = await db.query('SELECT token FROM compiler_runs WHERE token=$1 AND user_id=$2 AND expires_at > now()', [token, user]);
     if (!owner.rows.length) return res.status(404).json({ error: 'Run token not found or expired. Run the code again.' });
     try {
-      const polled = await pollUntilFinished(token, 8);
+      const polled = await pollUntilFinished(token, 2);
       if (!polled.done) return res.status(202).json({ pending: true, token, status: text(polled.result?.status?.description || 'In Queue', 80), message: 'Your code is still running in the public queue. Check again in a moment.' });
       return res.json({ result: formatResult(polled.result), token });
     } catch (e) {
