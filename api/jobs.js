@@ -132,7 +132,7 @@ async function refreshFeeds() {
     if (!merged.has(key)) merged.set(key, j);
   }
   const result = { fetchedAt: Date.now(), jobs: [...merged.values()], sources: feeds.map(({ jobs, ...s }) => s) };
-  if (!q) feedCache = result;
+  feedCache = result;
   return result;
 }
 export default async function(req, res) {
