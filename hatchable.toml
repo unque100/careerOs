@@ -35,3 +35,83 @@ default = 799
 min = 0
 max = 100000
 integer = true
+
+[db.tables.ai_usage_monthly]
+read = "own"
+write = "own"
+
+[db.tables.career_conversations]
+read = "own"
+write = "own"
+
+[db.tables.career_goals]
+read = "own"
+write = "own"
+
+[db.tables.career_messages]
+read = "own"
+write = "own"
+
+[db.tables.career_profiles]
+read = "own"
+write = "own"
+
+[db.tables.career_roadmaps]
+read = "own"
+write = "own"
+
+[db.tables.coding_attempts]
+read = "own"
+write = "own"
+
+[db.tables.interview_sessions]
+read = "own"
+write = "own"
+
+[db.tables.interview_turns]
+read = "own"
+write = "own"
+
+[db.tables.job_applications]
+read = "own"
+write = "own"
+
+[db.tables.job_descriptions]
+read = "own"
+write = "own"
+
+[db.tables.learning_progress]
+read = "own"
+write = "own"
+
+[db.tables.resume_analyses]
+read = "own"
+write = "own"
+
+[db.tables.resume_documents]
+read = "own"
+write = "own"
+
+[db.tables.roadmap_tasks]
+read = "own"
+write = "own"
+
+[db.tables.skill_gap_analyses]
+read = "own"
+write = "own"
+
+[db.tables.subscriptions]
+read = "own"
+write = "own"
+
+[db.tables.user_activity]
+read = "own"
+write = "own"
+
+[db.tables.learning_topics]
+read = "public"
+write = "member"
+
+[db.tables.dsa_problems]
+read = "public"
+write = "member"
