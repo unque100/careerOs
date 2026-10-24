@@ -64,6 +64,10 @@ write = "own"
 read = "own"
 write = "own"
 
+[db.tables.compiler_runs]
+read = "own"
+write = "own"
+
 [db.tables.interview_sessions]
 read = "own"
 write = "own"
