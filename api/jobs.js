@@ -150,12 +150,13 @@ export default async function(req, res) {
     const haystack = [j.title, j.company, j.location, j.description, ...(j.tags || []), j.employmentType, j.seniority].join(' ').toLowerCase();
     const matchQ = !ql || haystack.includes(ql);
     const matchLocation = !ll || /remote|worldwide|anywhere/i.test(ll) && j.remote || haystack.includes(ll);
+    const roleMeta = [j.title, j.employmentType, j.seniority, ...(j.tags || [])].join(' ').toLowerCase();
     const matchStage = !stage || stage === 'any' || (stage === 'student'
-      ? /intern|entry|junior|graduate|trainee|apprentice|associate/i.test(haystack)
+      ? /intern|entry[- ]level|junior|graduate|trainee|apprentice|student|early career/i.test(roleMeta)
       : stage === 'professional'
-        ? !/internship|student only/i.test(haystack)
+        ? !/internship|student only/i.test(roleMeta)
         : stage === 'entrepreneur'
-          ? /founder|startup|business development|sales|growth|marketing|freelance|contract|consultant|partnership/i.test(haystack)
+          ? /founder|startup|business development|sales|growth|marketing|freelance|contract|consultant|partnership|account executive/i.test(roleMeta + ' ' + j.description.toLowerCase())
           : true);
     return matchQ && matchLocation && matchStage;
   });
