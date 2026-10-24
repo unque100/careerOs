@@ -191,13 +191,10 @@ export default async function(req, res) {
     const contestId = Number(b.contestId), index = clean(b.index, 8).toUpperCase();
     if (!Number.isSafeInteger(contestId) || contestId < 1 || !/^[A-Z0-9]+$/.test(index)) return res.status(400).json({ error: 'A valid Codeforces contest and problem index are required.' });
     const topicName = DSA_TOPICS[clean(b.topic,100)] ? clean(b.topic,100) : 'Arrays & Implementation';
-    const rating = b.rating == null || b.rating === '' ? null : Number(b.rating);
-    const difficulty = difficultyForRating(Number.isFinite(rating) ? rating : null);
-    const title = clean(b.title,180) || 'Codeforces problem ' + contestId + index;
     const slug = 'cf-' + contestId + '-' + index.toLowerCase();
-    const url = 'https://codeforces.com/problemset/problem/' + contestId + '/' + encodeURIComponent(index);
-    const inserted = await db.query("INSERT INTO dsa_problems(slug,title,topic,difficulty,statement,practice_url,source,source_verified,tags) VALUES($1,$2,$3,$4,$5,$6,'Codeforces public API',true,$7::jsonb) ON CONFLICT(slug) DO UPDATE SET title=EXCLUDED.title,topic=EXCLUDED.topic,difficulty=EXCLUDED.difficulty,practice_url=EXCLUDED.practice_url,source=EXCLUDED.source,source_verified=true,tags=EXCLUDED.tags RETURNING id", [slug,title,topicName,difficulty,'Solve the official Codeforces statement and record the approach, proof and complexity.',url,JSON.stringify(Array.isArray(b.tags)?b.tags.slice(0,8):[])]);
-    const r = await db.query('INSERT INTO coding_attempts(user_id,problem_id,problem_slug,status,language,approach_notes,time_complexity,space_complexity,actual_minutes) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id,problem_slug,status,language,approach_notes,time_complexity,space_complexity,actual_minutes,attempted_at', [user,inserted.rows[0].id,slug,status,clean(b.language,60)||null,clean(b.approachNotes,5000)||null,clean(b.timeComplexity,80)||null,clean(b.spaceComplexity,80)||null,Math.max(0,Math.min(100000,Math.floor(Number(b.actualMinutes)||0)))]);
+    // The live Codeforces catalogue is external data and remains read-only for end users.
+    // Attempt records belong to the current user; problem_id is nullable by schema.
+    const r = await db.query('INSERT INTO coding_attempts(user_id,problem_id,problem_slug,status,language,approach_notes,time_complexity,space_complexity,actual_minutes) VALUES($1,NULL,$2,$3,$4,$5,$6,$7,$8) RETURNING id,problem_slug,status,language,approach_notes,time_complexity,space_complexity,actual_minutes,attempted_at', [user,slug,status,clean(b.language,60)||null,clean(b.approachNotes,5000)||null,clean(b.timeComplexity,80)||null,clean(b.spaceComplexity,80)||null,Math.max(0,Math.min(100000,Math.floor(Number(b.actualMinutes)||0)))]);
     await logActivity(user, 'dsa_attempt_saved', 'dsa_problem', slug, { status, source: 'Codeforces', topic: topicName });
     return res.status(201).json({ attempt: r.rows[0] });
   }
