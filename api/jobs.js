@@ -4,7 +4,7 @@ export const access = 'user';
 export const methods = ['GET'];
 
 let feedCache = { fetchedAt: 0, jobs: [], sources: [] };
-const CACHE_MS = 3 * 60 * 1000;
+const CACHE_MS = 30 * 60 * 1000;
 
 function plain(value, max = 500) {
   return String(value || '')
@@ -51,6 +51,7 @@ function normalizeHimalayas(j) {
     salary: plain(salary, 100),
     description: plain(j.excerpt || j.description, 420),
     publishedAt: asDate(j.pubDate),
+    expiresAt: asDate(j.expiryDate),
     applyUrl: validUrl(j.applicationLink),
     jobUrl: validUrl(j.guid || j.applicationLink),
     source: 'Himalayas',
@@ -108,18 +109,18 @@ async function fetchJson(name, url, normalize, sourceUrl, opts = {}) {
     const rows = Array.isArray(body) ? body : (Array.isArray(body.jobs) ? body.jobs : []);
     return {
       name, status: 'live', fetchedAt: new Date().toISOString(),
-      count: rows.length, jobs: rows.map(normalize).filter(Boolean), sourceUrl
+      count: rows.length, jobs: rows.map(normalize).filter(Boolean).filter(j => !j.expiresAt || Date.parse(j.expiresAt) > Date.now()), sourceUrl
     };
   } catch (e) {
     console.warn('Live job source unavailable', name, String(e && e.message || e).slice(0, 160));
     return { name, status: 'unavailable', fetchedAt: new Date().toISOString(), count: 0, jobs: [], sourceUrl };
   }
 }
-async function refreshFeeds(q) {
-  const himalayasUrl = q
-    ? 'https://himalayas.app/jobs/api/search?q=' + encodeURIComponent(q) + '&sort=recent&page=1'
-    : 'https://himalayas.app/jobs/api?limit=20';
-  const remotiveUrl = 'https://remotive.com/api/remote-jobs?limit=50' + (q ? '&search=' + encodeURIComponent(q) : '');
+async function refreshFeeds() {
+  // Pull the free feeds in batches and apply user search filters locally.
+  // Himalayas refreshes its cached feed daily; avoid repeated upstream queries per keystroke.
+  const himalayasUrl = 'https://himalayas.app/jobs/api?limit=20';
+  const remotiveUrl = 'https://remotive.com/api/remote-jobs?limit=50';
   const feeds = await Promise.all([
     fetchJson('Himalayas', himalayasUrl, normalizeHimalayas, 'https://himalayas.app'),
     fetchJson('Jobicy', 'https://jobicy.com/api/jobs?count=100', normalizeJobicy, 'https://jobicy.com'),
@@ -140,10 +141,10 @@ export default async function(req, res) {
   const stage = String(req.query?.stage || '').trim().slice(0, 40);
   const force = String(req.query?.refresh || '') === '1';
   let feed;
-  if (!force && !q && Date.now() - feedCache.fetchedAt < CACHE_MS && feedCache.jobs.length) {
+  if (!force && Date.now() - feedCache.fetchedAt < CACHE_MS && feedCache.jobs.length) {
     feed = feedCache;
   } else {
-    feed = await refreshFeeds(q);
+    feed = await refreshFeeds();
   }
   const ql = q.toLowerCase(), ll = location.toLowerCase();
   let jobs = feed.jobs.filter(j => {
