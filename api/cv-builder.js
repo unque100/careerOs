@@ -106,7 +106,7 @@ export default async function(req,res){
    Promise.resolve({email:req.user.email||'',name:req.user.name||''}),
    db.query('SELECT id,cv_data,raw_text,job_description,ats_report,created_at,updated_at FROM career_cvs WHERE user_id=$1 LIMIT 1',[user])
   ]);
-  return res.json({profile:profile.rows[0]?{...profile.rows[0],current_role:profile.rows[0].current_job_role}:null,account,cv:cv.rows[0]||null,source:'CareerOS managed PostgreSQL'});
+  return res.json({profile:profile.rows[0]?{...profile.rows[0],current_role:profile.rows[0].current_job_role}:null,account:{...account,userIdSuffix:user.slice(-5)},databaseStatus:{database:'CareerOS managed PostgreSQL',table:'career_profiles',profileExists:!!profile.rows[0],profileId:profile.rows[0]?.id||null,verified:!!profile.rows[0],lastSavedAt:profile.rows[0]?.updated_at||profile.rows[0]?.created_at||null,userIdSuffix:user.slice(-5)},cv:cv.rows[0]||null,source:'CareerOS managed PostgreSQL'});
  }
  const b=req.body||{},action=txt(b.action,40);
  if(!['save-cv','ats-check'].includes(action))return res.status(400).json({error:'Choose save-cv or ats-check.'});

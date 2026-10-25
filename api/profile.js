@@ -12,7 +12,7 @@ export default async function(req,res){
   const r=await db.query('SELECT * FROM career_profiles WHERE user_id=$1',[user]);
   const sub=await db.query("SELECT plan_id,status,expires_at FROM subscriptions WHERE user_id=$1 LIMIT 1",[user]);
   const profile=r.rows[0]?{...r.rows[0],current_role:r.rows[0].current_job_role}:null;
-  return res.json({profile,subscription:sub.rows[0]||{plan_id:'free',status:'active',expires_at:null},account:{email:req.user.email,name:req.user.name||null}});
+  return res.json({profile,subscription:sub.rows[0]||{plan_id:'free',status:'active',expires_at:null},account:{email:req.user.email,name:req.user.name||null,userIdSuffix:user.slice(-5)},databaseStatus:{database:'CareerOS managed PostgreSQL',table:'career_profiles',profileExists:!!profile,profileId:profile?.id||null,verified:!!profile,lastSavedAt:profile?.updated_at||profile?.created_at||null,userIdSuffix:user.slice(-5)}});
  }
  const b=req.body||{},fullName=clean(b.fullName,120),stage=stages.has(b.careerStage)?b.careerStage:'working_professional';
  const headline=clean(b.profileHeadline,180),bio=clean(b.bio,1600),website=parseHttpUrl(b.websiteUrl),linkedin=parseHttpUrl(b.linkedinUrl),github=parseHttpUrl(b.githubUrl);
@@ -40,6 +40,14 @@ export default async function(req,res){
  try { await logActivity(user,'profile_saved','career_profile',r.rows[0].id,{careerStage:stage,targetRole:target}); }
  catch(e) { console.warn('Profile audit event could not be recorded:',String(e&&e.message||e).slice(0,160)); }
  const saved=await db.query('SELECT * FROM career_profiles WHERE user_id=$1 LIMIT 1',[user]);
- const verified=saved.rows[0]||r.rows[0];
- return res.json({profile:{...verified,current_role:verified.current_job_role},saved:!!saved.rows[0],message:'Career profile saved to your account database.'});
+ if(!r.rows[0]){
+  console.error('Career profile INSERT returned no row',{userIdSuffix:user.slice(-5)});
+  return res.status(500).json({error:'The database did not confirm a profile row. Your profile has not been marked as saved. Please retry once.',databaseStatus:{table:'career_profiles',verified:false,userIdSuffix:user.slice(-5)}});
+ }
+ if(!saved.rows[0]||String(saved.rows[0].user_id)!==user){
+  console.error('Career profile read-back verification failed',{insertedId:r.rows[0].id,userIdSuffix:user.slice(-5),readBackCount:saved.rows.length});
+  return res.status(500).json({error:'CareerOS wrote a profile record but could not read it back for this signed-in account. Save is not confirmed. Check that you are using the same account and retry once.',databaseStatus:{table:'career_profiles',verified:false,writeReturnedId:r.rows[0].id,userIdSuffix:user.slice(-5)}});
+ }
+ const verified=saved.rows[0];
+ return res.json({profile:{...verified,current_role:verified.current_job_role},saved:true,message:'Career profile saved and verified in career_profiles.',databaseStatus:{table:'career_profiles',verified:true,profileId:verified.id,userIdSuffix:user.slice(-5),lastSavedAt:verified.updated_at||verified.created_at}});
 }

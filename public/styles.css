@@ -231,4 +231,18 @@
 .profile-db-confirm.is-missing{border-color:#d0a04b80;background:linear-gradient(110deg,#d6a43a12,transparent)}
 .profile-db-confirm.is-missing .profile-db-status-icon{background:#d6a43a20;color:#b7831b}
 
+/* Mobile workspace navigation: keep the entire menu scrollable and give it an explicit dismiss layer. */
+.sidebar-backdrop{display:none}
+@media(max-width:760px){
+ .app-sidebar{height:100vh;height:100dvh;max-height:100dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding-bottom:max(14px,env(safe-area-inset-bottom))}
+ .app-sidebar.open{transform:translateX(0)}
+ .sidebar-backdrop{display:none;position:fixed;inset:0;z-index:45;background:rgba(4,10,24,.52);border:0;padding:0;margin:0;backdrop-filter:blur(2px);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+ .sidebar-backdrop.open{display:block}
+ .app-sidebar{z-index:50}
+ body.sidebar-open{overflow:hidden;overscroll-behavior:none}
+ .side-item{min-height:42px;font-size:12px;padding:11px 12px;touch-action:manipulation}
+ .side-item>span{flex:0 0 20px}
+ .mobile-sidebar-btn{min-width:38px;min-height:38px;display:grid;place-items:center;touch-action:manipulation}
+}
+
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
