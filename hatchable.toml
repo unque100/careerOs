@@ -68,6 +68,22 @@ write = "own"
 read = "own"
 write = "own"
 
+[db.tables.notification_preferences]
+read = "own"
+write = "own"
+
+[db.tables.career_reminders]
+read = "own"
+write = "own"
+
+[db.tables.career_notifications]
+read = "own"
+write = "own"
+
+[[cron]]
+path = "/api/reminder-digest"
+schedule = "0 * * * *"
+
 [db.tables.interview_sessions]
 read = "own"
 write = "own"
