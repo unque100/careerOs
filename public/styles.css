@@ -245,4 +245,66 @@
  .mobile-sidebar-btn{min-width:38px;min-height:38px;display:grid;place-items:center;touch-action:manipulation}
 }
 
+/* Help & Getting Started — one guide, accessible from the workspace sidebar. */
+.help-welcome{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:17px;align-items:center;padding:22px;margin-bottom:26px;border:1px solid #cfd9fa;border-radius:17px;background:radial-gradient(circle at 95% 0,#dfe6ff 0,transparent 36%),linear-gradient(120deg,#f7f8ff,#fff);box-shadow:0 12px 35px #22385e0a}
+.help-welcome-mark{width:52px;height:52px;display:grid;place-items:center;position:relative;border-radius:15px;background:linear-gradient(145deg,#d3dcff,#8799ef);color:#152344;font:800 25px Manrope}
+.help-welcome-mark span{position:absolute;right:4px;top:3px;font-size:10px}
+.help-welcome h2{font:800 clamp(18px,2vw,25px)/1.25 Manrope,sans-serif;letter-spacing:-.8px;color:#1b2948;margin:6px 0 8px}
+.help-welcome p{margin:0;color:#6e7b94;font-size:11px;line-height:1.8;max-width:690px}
+.help-welcome-action{display:flex;gap:8px;flex-direction:column}
+.help-section-head{margin:30px 0 15px}
+.help-section-head h2{font:800 21px/1.25 Manrope,sans-serif;letter-spacing:-.7px;color:var(--ink,#1b2948);margin:6px 0}
+.help-section-head>p{font-size:10px;line-height:1.8;color:var(--muted,#78859b);margin:0;max-width:720px}
+.help-step-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.help-step-card,.help-journey-card{min-width:0;border:1px solid var(--line,#e1e6f0);border-radius:13px;background:var(--white,#fff);padding:15px;display:flex;flex-direction:column;align-items:flex-start}
+.help-step-no{display:grid;place-items:center;width:31px;height:31px;border-radius:10px;background:#eef0ff;color:#6073d2;font:800 10px Manrope}
+.help-step-card h3,.help-journey-card h3{font:750 12px/1.5 Manrope,sans-serif;color:var(--ink,#283653);margin:11px 0 6px}
+.help-step-card p,.help-journey-card p{font-size:10px;line-height:1.8;color:var(--muted,#77849b);margin:0 0 13px;flex:1}
+.help-step-card .btn{margin-top:auto}
+.help-journey-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.help-journey-icon{display:grid;place-items:center;width:34px;height:34px;border:1px solid #e0e5ff;border-radius:11px;background:#f0f2ff;color:#687cdf;font-size:16px}
+.help-card-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:auto;padding-top:3px}
+.help-text-link{padding:6px 0;border:0;background:transparent;color:#6072d0;font-size:10px;font-weight:700}
+.help-tool-list{border:1px solid var(--line,#e1e6f0);border-radius:14px;background:var(--white,#fff);padding:0 16px}
+.help-tool-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:14px 2px;border-bottom:1px solid var(--line,#edf0f6)}
+.help-tool-row:last-child{border-bottom:0}
+.help-tool-copy{min-width:0}
+.help-tool-copy h3{font:750 11px Manrope,sans-serif;color:var(--ink,#273450);margin:0 0 5px}
+.help-tool-copy p{font-size:10px;line-height:1.7;color:var(--muted,#7a879d);margin:0;max-width:850px}
+.help-tool-row .btn{flex-shrink:0}
+.help-benefit-section{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:22px;align-items:start;border:1px solid #d8e1fa;border-radius:15px;padding:21px;margin-top:30px;background:linear-gradient(120deg,#f4f6ff,#fff)}
+.help-benefit-section h2{font:800 23px/1.25 Manrope,sans-serif;letter-spacing:-.8px;color:#1d2c4d;margin:8px 0}
+.help-benefit-section p{font-size:10px;line-height:1.9;color:#6f7d96}
+.help-benefit-list{display:grid;gap:9px}
+.help-benefit-list>div{padding:12px 13px;border:1px solid #dfe5f5;background:#ffffffd9;border-radius:10px}
+.help-benefit-list b,.help-benefit-list span{display:block}
+.help-benefit-list b{font:750 10px Manrope;color:#354462;margin-bottom:5px}
+.help-benefit-list span{font-size:9px;line-height:1.6;color:#7e8aa2}
+.help-routine-grid,.help-setup-grid,.help-trust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.help-routine-grid .panel,.help-setup-grid .panel,.help-trust-grid .panel{min-width:0}
+.help-routine-label{font-size:8px;font-weight:800;letter-spacing:1px;color:#6d7ee0}
+.help-routine-grid h3,.help-setup-grid h3,.help-trust-grid h3{font:750 13px Manrope,sans-serif;color:var(--ink,#283653);margin:9px 0}
+.help-routine-grid ol,.help-trust-grid ul{padding-left:18px;margin:10px 0 0}
+.help-routine-grid li,.help-trust-grid li{font-size:10px;line-height:1.85;color:var(--muted,#738099);margin:5px 0}
+.help-setup-grid p{font-size:10px;line-height:1.85;color:var(--muted,#75829a);margin:7px 0 12px}
+.help-trust-grid h3 span{display:inline-grid;place-items:center;width:21px;height:21px;margin-right:5px;border-radius:6px;background:#e5f6ed;color:#25805b}
+.help-trust-grid section:nth-child(2) h3 span{background:#fff2de;color:#a66e1b}
+.help-faq{margin-top:25px}
+.help-faq-item{padding:13px 14px;border:1px solid var(--line,#e1e6f0);border-radius:10px;background:var(--white,#fff);margin:7px 0}
+.help-faq-item summary{cursor:pointer;font:700 10px Manrope,sans-serif;color:var(--ink,#273450);list-style:none;display:flex;justify-content:space-between;gap:12px}
+.help-faq-item summary::-webkit-details-marker{display:none}
+.help-faq-item summary:after{content:'+';font-size:15px;color:#6c7de0}
+.help-faq-item[open] summary:after{content:'−'}
+.help-faq-item p{font-size:10px;line-height:1.85;color:var(--muted,#75829a);margin:10px 0 0;max-width:900px}
+.help-final-cta{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:25px 0 0;padding:19px;border:1px solid #d1daf9;border-radius:14px;background:linear-gradient(115deg,#eff2ff,#fff)}
+.help-final-cta h2{font:800 19px Manrope;color:#1d2c4d;margin:6px 0}
+.help-final-cta p{font-size:10px;line-height:1.7;color:#73809a;margin:0}
+:root[data-theme="dark"] .help-welcome,:root[data-theme="dark"] .help-benefit-section,:root[data-theme="dark"] .help-final-cta{background:linear-gradient(120deg,#142746,#121e32);border-color:#2f4160}
+:root[data-theme="dark"] .help-welcome h2,:root[data-theme="dark"] .help-benefit-section h2,:root[data-theme="dark"] .help-final-cta h2{color:#edf2ff}
+:root[data-theme="dark"] .help-benefit-list>div{background:#18243a;border-color:#2c3c56}
+:root[data-theme="dark"] .help-benefit-list b{color:#dbe5ff}
+@media(max-width:1050px){.help-step-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.help-journey-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.help-welcome{grid-template-columns:52px minmax(0,1fr)}.help-welcome-action{grid-column:2;flex-direction:row;flex-wrap:wrap}}
+@media(max-width:760px){.help-welcome{grid-template-columns:1fr;gap:11px;padding:16px}.help-welcome-action{grid-column:auto;flex-direction:column;align-items:stretch}.help-welcome-action .btn{width:100%}.help-step-grid,.help-journey-grid,.help-routine-grid,.help-setup-grid,.help-trust-grid,.help-benefit-section{grid-template-columns:1fr}.help-benefit-section{padding:15px}.help-tool-list{padding:0 11px}.help-tool-row{align-items:flex-start;flex-direction:column;gap:9px;padding:13px 1px}.help-tool-row .btn{align-self:flex-start}.help-final-cta{align-items:flex-start;flex-direction:column}.help-card-actions{width:100%}.help-card-actions .btn{flex:1}}
+@media(max-width:390px){.help-step-grid,.help-journey-grid{grid-template-columns:1fr}.help-section-head h2{font-size:19px}.help-tool-copy p,.help-setup-grid p{font-size:10px}}
+
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
