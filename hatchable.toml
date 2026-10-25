@@ -56,6 +56,10 @@ write = "own"
 read = "own"
 write = "own"
 
+[db.tables.career_cvs]
+read = "own"
+write = "own"
+
 [db.tables.career_roadmaps]
 read = "own"
 write = "own"
