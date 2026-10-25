@@ -61,7 +61,8 @@ function buildText(cv){
  return out.join('\n').trim();
 }
 function tokens(s){
- return Array.from(new Set(String(s||'').toLowerCase().match(/[a-z][a-z0-9+#.-]{2,}/g)||[]));
+ const matches=String(s||'').toLowerCase().match(/[a-z][a-z0-9+#.-]{2,}/g)||[];
+ return Array.from(new Set(matches.map(t=>t.replace(/^[.-]+|[.-]+$/g,'')).filter(t=>t.length>=3)));
 }
 function freeAtsCheck(cv,jobDescription,profile){
  const textBody=buildText(cv);
