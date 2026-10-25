@@ -222,4 +222,13 @@
  #cvPreview .cv-paper-section{break-inside:avoid;page-break-inside:avoid}
 }
 
+.profile-db-confirm{display:flex;align-items:flex-start;gap:11px;margin:0 0 15px;padding:13px 15px;border:1px solid #2d9c7666;border-radius:12px;background:linear-gradient(110deg,#1a8c6510,transparent);color:var(--ink)}
+.profile-db-status-icon{display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;border-radius:8px;background:#228b6c1a;color:#26a47c;font-weight:900}
+.profile-db-confirm b{display:block;font:750 12px Manrope,sans-serif}
+.profile-db-confirm p{margin:4px 0;color:var(--muted);font-size:10px;line-height:1.65}
+.profile-db-confirm small{display:block;color:var(--muted2);font-size:9px;line-height:1.6;overflow-wrap:anywhere}
+.profile-db-confirm code{font-size:10px;color:var(--ink);background:var(--bg);padding:2px 5px;border-radius:4px}
+.profile-db-confirm.is-missing{border-color:#d0a04b80;background:linear-gradient(110deg,#d6a43a12,transparent)}
+.profile-db-confirm.is-missing .profile-db-status-icon{background:#d6a43a20;color:#b7831b}
+
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
