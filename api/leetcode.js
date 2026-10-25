@@ -91,7 +91,7 @@ export default async function(req,res){
   const topics=[...new Set(live.data.problems.flatMap(p=>p.tags))].sort((a,b)=>a.localeCompare(b));
   const diffCounts={Easy:0,Medium:0,Hard:0};
   for(const p of live.data.problems)if(diffCounts[p.difficulty]!==undefined)diffCounts[p.difficulty]++;
-  return res.json({problems,total:source.length,page,limit,pages:Math.max(1,Math.ceil(source.length/limit)),hasMore:offset+limit<source.length,topics,difficultyCounts:diffCounts,stats:counts.rows[0],source:live.data.source,sourceFetchedAt:live.data.fetchedAt,totalSourceRecords:live.data.totalSourceRecords,freeSourceRecords:live.data.freeSourceRecords,curation:live.data.curation,live:true,disclaimer:'Metadata only: problem statements and submissions remain on LeetCode. Only public, non-premium problem links are included. The source is third-party and may change or be unavailable.'});
+  return res.json({problems,total:source.length,catalogCount:live.data.problems.length,page,limit,pages:Math.max(1,Math.ceil(source.length/limit)),hasMore:offset+limit<source.length,topics,difficultyCounts:diffCounts,stats:counts.rows[0],source:live.data.source,sourceFetchedAt:live.data.fetchedAt,totalSourceRecords:live.data.totalSourceRecords,freeSourceRecords:live.data.freeSourceRecords,curation:live.data.curation,live:true,disclaimer:'Metadata only: problem statements and submissions remain on LeetCode. Only public, non-premium problem links are included. The source is third-party and may change or be unavailable.'});
  }
  const action=text(b.action,40);
  if(action!=='save-attempt')return res.status(400).json({error:'Unsupported LeetCode action.'});
