@@ -307,4 +307,34 @@
 @media(max-width:760px){.help-welcome{grid-template-columns:1fr;gap:11px;padding:16px}.help-welcome-action{grid-column:auto;flex-direction:column;align-items:stretch}.help-welcome-action .btn{width:100%}.help-step-grid,.help-journey-grid,.help-routine-grid,.help-setup-grid,.help-trust-grid,.help-benefit-section{grid-template-columns:1fr}.help-benefit-section{padding:15px}.help-tool-list{padding:0 11px}.help-tool-row{align-items:flex-start;flex-direction:column;gap:9px;padding:13px 1px}.help-tool-row .btn{align-self:flex-start}.help-final-cta{align-items:flex-start;flex-direction:column}.help-card-actions{width:100%}.help-card-actions .btn{flex:1}}
 @media(max-width:390px){.help-step-grid,.help-journey-grid{grid-template-columns:1fr}.help-section-head h2{font-size:19px}.help-tool-copy p,.help-setup-grid p{font-size:10px}}
 
+/* Account menu and explicit logout confirmation */
+.sidebar-bottom{position:relative}
+.account-menu{position:absolute;left:0;right:0;bottom:48px;z-index:90;display:grid;gap:3px;padding:7px;border:1px solid var(--line);border-radius:14px;background:var(--white);box-shadow:0 18px 46px #0e19311f}
+.account-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 11px;border:0;border-radius:9px;background:transparent;color:var(--ink);font:650 11px Manrope,sans-serif;text-align:left;cursor:pointer}
+.account-menu button>span{width:18px;display:inline-grid;place-items:center;color:var(--muted)}
+.account-menu button:hover,.account-menu button:focus-visible{background:var(--pale);outline:none}
+.account-menu .account-menu-divider{height:1px;margin:3px 5px;background:var(--line)}
+.account-menu .account-menu-logout{color:#bd4751}
+.account-menu .account-menu-logout>span{color:inherit}
+.signout-button{cursor:pointer;border-radius:10px}
+.signout-button:hover,.signout-button:focus-visible{background:var(--pale);outline:2px solid transparent}
+.logout-confirm-overlay{position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:20px;background:rgba(7,13,26,.58);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.logout-confirm-card{width:min(420px,100%);padding:27px;border:1px solid var(--line);border-radius:20px;background:var(--white);color:var(--ink);box-shadow:0 30px 90px #09152a38}
+.logout-confirm-icon{width:43px;height:43px;display:grid;place-items:center;margin-bottom:16px;border-radius:13px;background:var(--pale);color:var(--navy);font-size:21px}
+.logout-confirm-card h2{margin:0 0 9px;font:800 21px/1.25 Manrope,sans-serif;letter-spacing:-.55px}
+.logout-confirm-card>p{margin:0;color:var(--muted);font-size:12px;line-height:1.7}
+.logout-confirm-card .logout-status{min-height:0;margin-top:10px;color:#b74750;font-size:11px}
+.logout-confirm-card .logout-status:empty{display:none}
+.logout-confirm-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:22px}
+.logout-confirm-actions #logoutConfirmBtn{background:#bd4751;border-color:#bd4751}
+.logout-confirm-actions #logoutConfirmBtn:hover{background:#a93b45}
+:root[data-theme="dark"] .account-menu{background:#111a2a;border-color:#29364d;box-shadow:0 18px 46px #0007}
+:root[data-theme="dark"] .account-menu button{color:#e4eaf5}
+:root[data-theme="dark"] .account-menu button>span{color:#9aa8c0}
+:root[data-theme="dark"] .account-menu button:hover,:root[data-theme="dark"] .account-menu button:focus-visible{background:#202b45}
+:root[data-theme="dark"] .account-menu .account-menu-divider{background:#29364d}
+:root[data-theme="dark"] .logout-confirm-card{background:#111a2a;border-color:#29364d}
+:root[data-theme="dark"] .logout-confirm-icon{background:#202b45;color:#eaf0ff}
+@media(max-width:760px){.logout-confirm-card{padding:22px}.account-menu{left:1px;right:1px}}
+
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
