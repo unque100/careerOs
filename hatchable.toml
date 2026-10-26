@@ -1,6 +1,7 @@
 [auth]
 enabled = true
 providers = ["email"]
+login_path = "/login"
 
 [ai]
 required = true
