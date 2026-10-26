@@ -337,4 +337,39 @@
 :root[data-theme="dark"] .logout-confirm-icon{background:#202b45;color:#eaf0ff}
 @media(max-width:760px){.logout-confirm-card{padding:22px}.account-menu{left:1px;right:1px}}
 
+/* CareerOS shared workspace design layer */
+.app-view{background:var(--bg);color:var(--ink)}
+.app-sidebar{background:var(--white);border-color:var(--line);transition:background .18s,border-color .18s}
+.app-topbar{background:color-mix(in srgb,var(--white) 92%,transparent);border-color:var(--line)}
+.app-footer{background:var(--white);border-color:var(--line);color:var(--muted2)}
+.app-content .panel,.app-content .campaign-card,.app-content .task-card,.app-content .topic-card,.app-content .chat-sidebar,.app-content .chat-area,.app-content .usage-card,.app-content .app-ticket{border-color:var(--line);background:var(--white);color:var(--ink);box-shadow:0 5px 20px #253a6008}
+.app-content .panel{border-radius:14px}
+.app-content .panel-title,.app-content .profile-section-heading h3,.app-content .profile-storage-note h3{color:var(--navy)}
+.app-content .page-head h1{color:var(--navy);letter-spacing:-1.25px}
+.app-content .page-head p,.app-content .panel-subtitle{color:var(--muted)}
+.app-content .field input,.app-content .field select,.app-content .field textarea,.app-content .chat-composer textarea{border-color:var(--line2);background:var(--bg);color:var(--ink);border-radius:10px}
+.app-content .field input:focus,.app-content .field select:focus,.app-content .field textarea:focus{border-color:var(--violet);box-shadow:0 0 0 3px color-mix(in srgb,var(--violet) 16%,transparent)}
+.app-content .btn:focus-visible,.account-menu button:focus-visible,.signout-button:focus-visible{outline:2px solid var(--violet);outline-offset:3px}
+.app-content .profile-hero{border-color:var(--line);background:radial-gradient(circle at 92% 0%,color-mix(in srgb,var(--violet2) 18%,transparent) 0,transparent 35%),linear-gradient(135deg,var(--white),var(--bg));}
+.app-content .profile-progress{border-color:var(--line)}
+.app-content .profile-progress strong,.app-content .profile-detail b{color:var(--ink)}
+.app-content .profile-detail{border-color:var(--line)}
+.app-content .profile-detail span,.app-content .profile-section-heading p{color:var(--muted)}
+.app-content .profile-pill{background:var(--white);border-color:var(--line);color:var(--muted)}
+.app-content .profile-skill{background:color-mix(in srgb,var(--violet) 9%,var(--white));border-color:color-mix(in srgb,var(--violet) 20%,var(--line));color:var(--navy)}
+.app-content .profile-storage-note{background:linear-gradient(135deg,var(--white),var(--bg))}
+.profile-bio{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.profile-bio>span,.profile-list-label{display:block;margin:0 0 8px;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.45px;text-transform:uppercase}
+.profile-bio p{margin:0;color:var(--ink);font-size:11px;line-height:1.85;white-space:pre-wrap;overflow-wrap:anywhere}
+.profile-list-label{margin-top:14px}
+.app-content .profile-list-label+ .profile-skill-list{margin-bottom:8px}
+@media(max-width:900px){.app-content .profile-hero{background:linear-gradient(135deg,var(--white),var(--bg))}}
+@media(max-width:600px){.app-content .page-head{gap:12px}.app-content .page-head>.btn,.app-content .page-head>.page-actions{width:100%}.app-content .page-head>.btn{white-space:normal}.logout-confirm-actions .btn{flex:1}}
+:root[data-theme="dark"] .app-topbar{background:#0d1524ed;border-color:#263349}
+:root[data-theme="dark"] .app-content .panel,:root[data-theme="dark"] .app-content .campaign-card,:root[data-theme="dark"] .app-content .task-card,:root[data-theme="dark"] .app-content .topic-card,:root[data-theme="dark"] .app-content .chat-sidebar,:root[data-theme="dark"] .app-content .chat-area,:root[data-theme="dark"] .app-content .usage-card,:root[data-theme="dark"] .app-content .app-ticket{background:#111a2a;border-color:#29364d;box-shadow:none}
+:root[data-theme="dark"] .app-content .profile-skill{background:#202b45;border-color:#35445d;color:#d9e1ff}
+:root[data-theme="dark"] .app-content .profile-detail b,:root[data-theme="dark"] .profile-bio p{color:#e4eaf5}
+:root[data-theme="dark"] .app-content .profile-detail span,:root[data-theme="dark"] .app-content .profile-section-heading p,:root[data-theme="dark"] .profile-bio>span,:root[data-theme="dark"] .profile-list-label{color:#9aa8c0}
+:root[data-theme="dark"] .app-footer{background:#0d1524;border-color:#263349;color:#7786a0}
+
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
