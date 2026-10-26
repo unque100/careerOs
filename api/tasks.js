@@ -32,7 +32,7 @@ export default async function(req,res){
  if(status&&!statuses.has(status))return res.status(400).json({error:'Invalid task status.'});
  const actual=b.actualMinutes===undefined?null:Number(b.actualMinutes);
  if(actual!==null&&(!Number.isInteger(actual)||actual<0||actual>100000))return res.status(400).json({error:'Actual time must be a non-negative number of minutes.'});
- const r=await db.query("UPDATE roadmap_tasks SET status=COALESCE($3,status),actual_minutes=COALESCE($4,actual_minutes),completed_at=CASE WHEN $3='completed' THEN COALESCE(completed_at,now()) WHEN $3 IS NOT NULL THEN NULL ELSE completed_at END,updated_at=now() WHERE id=$1 AND user_id=$2 RETURNING *",[id,user,status,actual]);
+ const r=await db.query("UPDATE roadmap_tasks SET status=COALESCE($3,status),actual_minutes=COALESCE($4::integer,actual_minutes),completed_at=CASE WHEN $3='completed' THEN COALESCE(completed_at,now()) WHEN $3 IS NOT NULL THEN NULL ELSE completed_at END,updated_at=now() WHERE id=$1 AND user_id=$2 RETURNING *",[id,user,status,actual]);
  await logActivity(user,r.rows[0].status==='completed'?'roadmap_task_completed':'roadmap_task_updated','roadmap_task',id,{status:r.rows[0].status,actualMinutes:r.rows[0].actual_minutes});
  return res.json({task:r.rows[0]});
 }
