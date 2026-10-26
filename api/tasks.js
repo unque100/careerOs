@@ -28,11 +28,15 @@ export default async function(req,res){
  const own=await db.query('SELECT id FROM roadmap_tasks WHERE id=$1 AND user_id=$2',[id,user]);
  if(!own.rows.length)return res.status(404).json({error:'Task not found.'});
  if(req.method==='DELETE'){await db.query('DELETE FROM roadmap_tasks WHERE id=$1 AND user_id=$2',[id,user]);return res.json({deleted:true});}
- const status=b.status===undefined?null:String(b.status);
- if(status&&!statuses.has(status))return res.status(400).json({error:'Invalid task status.'});
- const actual=b.actualMinutes===undefined?null:Number(b.actualMinutes);
+ const status=b.status===undefined||b.status===null||b.status===''?null:String(b.status);
+ if(status!==null&&!statuses.has(status))return res.status(400).json({error:'Invalid task status.'});
+ const actual=b.actualMinutes===undefined||b.actualMinutes===null||b.actualMinutes===''?null:Number(b.actualMinutes);
  if(actual!==null&&(!Number.isInteger(actual)||actual<0||actual>100000))return res.status(400).json({error:'Actual time must be a non-negative number of minutes.'});
- const r=await db.query("UPDATE roadmap_tasks SET status=COALESCE($3,status),actual_minutes=COALESCE($4::integer,actual_minutes),completed_at=CASE WHEN $3='completed' THEN COALESCE(completed_at,now()) WHEN $3 IS NOT NULL THEN NULL ELSE completed_at END,updated_at=now() WHERE id=$1 AND user_id=$2 RETURNING *",[id,user,status,actual]);
+ const sets=[],params=[id,user];
+ if(status!==null){params.push(status);sets.push(`status=$${params.length}`);sets.push(status==='completed'?'completed_at=COALESCE(completed_at,now())':'completed_at=NULL');}
+ if(actual!==null){params.push(actual);sets.push(`actual_minutes=$${params.length}`);}
+ sets.push('updated_at=now()');
+ const r=await db.query(`UPDATE roadmap_tasks SET ${sets.join(',')} WHERE id=$1 AND user_id=$2 RETURNING *`,params);
  await logActivity(user,r.rows[0].status==='completed'?'roadmap_task_completed':'roadmap_task_updated','roadmap_task',id,{status:r.rows[0].status,actualMinutes:r.rows[0].actual_minutes});
  return res.json({task:r.rows[0]});
 }
