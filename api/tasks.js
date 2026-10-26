@@ -30,11 +30,14 @@ export default async function(req,res){
  if(req.method==='DELETE'){await db.query('DELETE FROM roadmap_tasks WHERE id=$1 AND user_id=$2',[id,user]);return res.json({deleted:true});}
  const status=b.status===undefined||b.status===null||b.status===''?null:String(b.status);
  if(status!==null&&!statuses.has(status))return res.status(400).json({error:'Invalid task status.'});
+ const dueDate=b.dueDate===undefined?undefined:(b.dueDate===null||b.dueDate===''?null:String(b.dueDate));
+ if(dueDate!==undefined&&dueDate!==null&&!/^\\d{4}-\\d{2}-\\d{2}$/.test(dueDate))return res.status(400).json({error:'Due date must use YYYY-MM-DD format.'});
  const actual=b.actualMinutes===undefined||b.actualMinutes===null||b.actualMinutes===''?null:Number(b.actualMinutes);
  if(actual!==null&&(!Number.isInteger(actual)||actual<0||actual>100000))return res.status(400).json({error:'Actual time must be a non-negative number of minutes.'});
  const sets=[],params=[id,user];
  if(status!==null){params.push(status);sets.push(`status=$${params.length}`);sets.push(status==='completed'?'completed_at=COALESCE(completed_at,now())':'completed_at=NULL');}
  if(actual!==null){params.push(actual);sets.push(`actual_minutes=$${params.length}`);}
+ if(dueDate!==undefined){params.push(dueDate);sets.push(`due_date=$${params.length}::date`);}
  sets.push('updated_at=now()');
  const r=await db.query(`UPDATE roadmap_tasks SET ${sets.join(',')} WHERE id=$1 AND user_id=$2 RETURNING *`,params);
  await logActivity(user,r.rows[0].status==='completed'?'roadmap_task_completed':'roadmap_task_updated','roadmap_task',id,{status:r.rows[0].status,actualMinutes:r.rows[0].actual_minutes});

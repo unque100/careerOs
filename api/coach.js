@@ -1,4 +1,5 @@
-import { ai, db } from 'hatchable';
+import { db } from 'hatchable';
+import { generateCareerText } from 'lib/career-ai.js';
 import { clean, consumeAiQuota, logActivity } from 'lib/career.js';
 export const access = 'user';
 export const methods = ['GET','POST'];
@@ -30,7 +31,7 @@ export default async function(req,res){
  const context={profile:profile.rows[0]||null,goals:goals.rows,roadmaps:roadmaps.rows};
  const messages=[{role:'user',content:'Authorized career profile context (user-editable, may be incomplete): '+JSON.stringify(context)},...history,{role:'user',content:prompt}];
  try{
-  const result=await ai.generateText({model:'gpt-mini',purpose:'careeros-career-coach',userId:user,system,prompt:messages.map(m=>(m.role==='assistant'?'Assistant':'User')+': '+m.content).join('\n\n'),maxTokens:2200});
+  const result=await generateCareerText({model:'gpt-mini',purpose:'careeros-career-coach',userId:user,system,prompt:messages.map(m=>(m.role==='assistant'?'Assistant':'User')+': '+m.content).join('\n\n'),maxTokens:2200});
   if(!result||typeof result.text!=='string'||!result.text.trim())return res.status(502).json({error:'AI provider returned no response.',usage:quota});
   const answer=result.text.trim();
   await db.query('INSERT INTO career_messages(conversation_id,user_id,role,content,model,input_tokens,output_tokens) VALUES($1,$2,\'user\',$3,$4,$5,$6)',[conversationId,user,prompt,'gpt-mini',result.usage?.inputTokens||null,result.usage?.outputTokens||null]);
