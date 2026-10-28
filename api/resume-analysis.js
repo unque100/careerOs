@@ -1,4 +1,5 @@
-import { ai, db } from 'hatchable';
+import { db } from 'hatchable';
+import { generateCareerText } from 'lib/career-ai.js';
 import { clean, safeJson, consumeAiQuota, logActivity } from 'lib/career.js';
 export const access = 'user';
 export const methods = ['POST'];
@@ -17,7 +18,7 @@ export default async function(req,res){
  if(!quota.allowed)return res.status(429).json({error:'Monthly AI limit reached for your current plan.',usage:quota});
  const prompt=`Review this resume for ${role||'the job description supplied'}. Return JSON: {"summary":"...","estimatedMatchScore":0,"strengths":["..."],"weaknesses":["..."],"missingOrWeakKeywords":["..."],"experienceRelevance":["..."],"achievementImprovements":[{"current":"...","suggestion":"...","why":"..."}],"formattingIssues":["..."],"nextSteps":["..."],"skillEvidence":["..."],"cautions":["..."]}. Score must be labeled as a heuristic estimate, not an ATS guarantee. Never invent metrics, employers, degrees, certifications, or skills. If data is absent, state that the user should add verified evidence. Distinguish an actual missing skill from one that simply is not evidenced.\nTarget role: ${role}\nResume text (user-provided):\n${resumeText}\nJob description (optional):\n${jd}`;
  try{
-  const result=await ai.generateText({model:'gpt-mini',purpose:'careeros-resume-analysis',userId:user,system:'You are a careful resume coach. Preserve factual integrity and give actionable suggestions. Do not imply employer ATS access.',prompt,maxTokens:2500});
+  const result=await generateCareerText({model:'gpt-mini',purpose:'careeros-resume-analysis',userId:user,system:'You are a careful resume coach. Preserve factual integrity and give actionable suggestions. Do not imply employer ATS access.',prompt,maxTokens:2500});
   if(!result||!result.text)return res.status(502).json({error:'AI returned no resume feedback.',usage:quota});
   const analysis=safeJson(result.text,{summary:result.text,needsReview:true});
   let score=Number(analysis.estimatedMatchScore);if(!Number.isFinite(score))score=null;else score=Math.max(0,Math.min(100,Math.round(score)));

@@ -13,7 +13,12 @@ export default async function(req,res){
  }
  const b=req.body||{};
  if(req.method==='POST'){
-  const target=clean(b.targetRole,160),title=clean(b.title,180)||('Career roadmap for '+(target||'your next step')),days=Math.max(7,Math.min(365,Math.trunc(Number(b.days)||Math.trunc(Number(b.weeks||4))*7))),weeks=Math.ceil(days/7),hours=Math.max(1,Math.min(80,Math.trunc(Number(b.weeklyHours||5))));
+  const target=clean(b.targetRole,160),title=clean(b.title,180)||('Career roadmap for '+(target||'your next step')),days=Math.max(7,Math.min(365,Math.trunc(Number(b.days)||Math.trunc(Number(b.weeks||4))*7))),weeks=Math.ceil(days/7);
+  const dailyHours=Math.max(0.5,Math.min(12,Number(b.dailyHours)||Math.min(8,Number(b.weeklyHours||5)/5)));
+  const hours=Math.max(1,Math.min(80,Math.trunc(Number(b.weeklyHours)||Math.round(dailyHours*5))));
+  const planType=['daily','weekly','complete','custom'].includes(b.planType)?b.planType:'daily';
+  const focusTopics=Array.isArray(b.focusTopics)?b.focusTopics.map(x=>clean(x,180)).filter(Boolean).slice(0,25):[];
+  const jobAnalysisContext=clean(b.jobAnalysisContext,10000);
   if(!target)return res.status(400).json({error:'Target role is required.'});
   const profile=(await db.query('SELECT full_name,career_stage,current_job_role AS current_role,experience_years,target_role,current_skills,weekly_hours,learning_style,challenge_areas,target_date FROM career_profiles WHERE user_id=$1',[user])).rows[0];
   const starterTasks=()=>{
@@ -34,7 +39,7 @@ export default async function(req,res){
    quota=await consumeAiQuota(user);
    if(!quota.allowed)return res.status(429).json({error:'Monthly AI limit reached for your current plan.',usage:quota});
    try{
-    const prompt='Create a realistic '+days+'-day career roadmap for a person aiming at '+target+'. Available time: '+hours+' hours per week. User profile: '+JSON.stringify(profile||{})+'. Return JSON only: {"summary":"short summary","tasks":[{"weekNumber":1,"title":"...","description":"...","category":"learning|practice|project|application|interview|review|networking|other","priority":"low|medium|high","estimatedMinutes":45,"completionCriteria":"..."}]}. Return one practical task per day for the first 90 days at most; for longer plans return a representative task schedule covering all phases. Include DSA, programming, CS fundamentals, LLD, HLD/system design, projects and mock interviews, split available hours realistically, and never guarantee outcomes.';
+    const prompt='Create a realistic '+days+'-day career roadmap for a person aiming at '+target+'. Plan style: '+planType+'. Daily study budget: '+dailyHours+' hours; weekly budget: '+hours+' hours. Respect both budgets when estimating each task. Prioritize these job-analysis focus areas first: '+JSON.stringify(focusTopics)+'. Reviewed job-analysis evidence/context: '+jobAnalysisContext+'. User profile: '+JSON.stringify(profile||{})+'. Return JSON only: {"summary":"short summary","tasks":[{"dayNumber":1,"weekNumber":1,"title":"...","description":"...","category":"learning|practice|project|application|interview|review|networking|other","priority":"low|medium|high","estimatedMinutes":45,"completionCriteria":"...","dueDate":"YYYY-MM-DD"}]}. Produce a usable day-by-day task sequence for plans up to 90 days; for longer plans structure later phases by week and return a practical representative task schedule. Include DSA/problem solving with questions and solution-review work, programming fundamentals, CS fundamentals, LLD, HLD/system design exercises, projects, revision and mock interviews. Make likely-skill gaps candidate-confirmable rather than assuming missing resume evidence means inability. Never invent candidate qualifications or guarantee outcomes.';
     const out=await generateCareerText({model:'gpt-mini',purpose:'careeros-roadmap',userId:user,system:'You are CareerOS, a practical career coach. Produce specific and achievable plans without guarantees or invented achievements.',prompt,maxTokens:2800});
     const parsed=safeJson(out&&out.text,{summary:generated.summary,tasks:[]});
     if(Array.isArray(parsed.tasks)&&parsed.tasks.length){
@@ -43,7 +48,7 @@ export default async function(req,res){
     }else{aiFallback=true;}
    }catch(e){console.error('roadmap AI failed',String(e&&e.message||e).slice(0,180));aiFallback=true;}
   }
-  const tasks=(Array.isArray(generated.tasks)&&generated.tasks.length?generated.tasks.slice(0,Math.min(days,365)):starterTasks()).map((t,i)=>({...t,dayNumber:Math.max(1,Math.min(days,Math.trunc(Number(t.dayNumber)||i+1))),dueDate:t.dueDate&&/^\\d{4}-\\d{2}-\\d{2}$/.test(t.dueDate)?t.dueDate:new Date(Date.now()+i*86400000).toISOString().slice(0,10)}));
+  const tasks=(Array.isArray(generated.tasks)&&generated.tasks.length?generated.tasks.slice(0,Math.min(days,365)):starterTasks()).map((t,i)=>({...t,dayNumber:Math.max(1,Math.min(days,Math.trunc(Number(t.dayNumber)||i+1))),estimatedMinutes:Math.max(15,Math.min(Math.round(dailyHours*60),Math.trunc(Number(t.estimatedMinutes)||45))),dueDate:t.dueDate&&/^\d{4}-\d{2}-\d{2}$/.test(t.dueDate)?t.dueDate:new Date(Date.now()+i*86400000).toISOString().slice(0,10)}));
   if(!tasks.length)generated.tasks=starterTasks();
   const goalId=b.goalId&&Number.isSafeInteger(Number(b.goalId))?Number(b.goalId):null;
   if(goalId!==null){const ownedGoal=await db.query('SELECT id FROM career_goals WHERE id=$1 AND user_id=$2',[goalId,user]);if(!ownedGoal.rows.length)return res.status(404).json({error:'Linked career goal not found in your account.'});}
@@ -55,7 +60,7 @@ export default async function(req,res){
    const mins=Math.max(5,Math.min(1440,Math.trunc(Number(t.estimatedMinutes)||45)));
    const category=categories.has(t.category)?t.category:'learning',priority=priorities.has(t.priority)?t.priority:'medium';
    await db.query('INSERT INTO roadmap_tasks(user_id,roadmap_id,week_number,title,description,category,priority,estimated_minutes,due_date,completion_criteria) VALUES($1,$2,$3,$4,$5,$6,$7,$8,COALESCE($10::date,CURRENT_DATE + (($3 * 7)-1)),$9)',
-    [user,roadmap.rows[0].id,week,taskTitle,clean(t.description,1200)||null,category,priority,mins,clean(t.completionCriteria,500)||null,t.dueDate&&/^\\d{4}-\\d{2}-\\d{2}$/.test(t.dueDate)?t.dueDate:null]);
+    [user,roadmap.rows[0].id,week,taskTitle,clean(t.description,1200)||null,category,priority,mins,clean(t.completionCriteria,500)||null,t.dueDate&&/^\d{4}-\d{2}-\d{2}$/.test(t.dueDate)?t.dueDate:null]);
   }
   await logActivity(user,'roadmap_created','career_roadmap',roadmap.rows[0].id,{generatedBy:by,taskCount:tasks.length});
   const saved=await db.query('SELECT id,week_number,title,description,category,priority,estimated_minutes,due_date,status,completion_criteria FROM roadmap_tasks WHERE roadmap_id=$1 AND user_id=$2 ORDER BY week_number,id',[roadmap.rows[0].id,user]);
