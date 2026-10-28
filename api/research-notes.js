@@ -6,6 +6,7 @@ export const methods=['GET','POST','DELETE'];
 
 const MAX_SOURCE_TEXT=16000;
 const MAX_HTML_BYTES=3000000;
+const STATIC_LEARNING_SLUGS=new Set(['typescript-fundamentals','javascript-fundamentals','nodejs-runtime','nestjs-fundamentals','java-fundamentals','python-fundamentals','oop-fundamentals','sql-databases','dbms-fundamentals','operating-systems','computer-networking','mongodb-fundamentals','redis-queues','queues-workers','cloud-fundamentals','backend-api-design','application-security','distributed-systems','performance-scalability','behavioral-interviews','security-web-fundamentals','rxjs-fundamentals','nodejs-testing','sql-query-plans','low-level-design-patterns','hld-capacity-planning']);
 const ALLOWED_HOSTS=[
  'developer.mozilla.org','nodejs.org','docs.nestjs.com','typescriptlang.org','docs.python.org',
  'postgresql.org','redis.io','docs.bullmq.io','mongodb.com','docs.aws.amazon.com',
@@ -26,7 +27,8 @@ function safeResearchUrl(value){
  }catch{return null}
 }
 function decodeHtml(s){
- return String(s||'').replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/gi,'&').replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&#x([0-9a-f]+);/gi,(_,x)=>String.fromCodePoint(parseInt(x,16))).replace(/&#(\d+);/g,(_,x)=>String.fromCodePoint(Number(x)));
+ const decodePoint=(raw,radix=10)=>{const n=Number.parseInt(raw,radix);return Number.isInteger(n)&&n>=0&&n<=0x10ffff&&!(n>=0xd800&&n<=0xdfff)?String.fromCodePoint(n):' '};
+ return String(s||'').replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/gi,'&').replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&#x([0-9a-f]+);/gi,(_,x)=>decodePoint(x,16)).replace(/&#(\d+);/g,(_,x)=>decodePoint(x,10));
 }
 function htmlToText(html){
  return decodeHtml(String(html||'')
@@ -161,6 +163,7 @@ export default async function(req,res){
   const own=await db.query('SELECT id FROM research_notes WHERE id=$1 AND user_id=$2',[noteId,user]);if(!own.rows.length)return res.status(404).json({error:'Research note not found.'});
   if(action==='link-topic'){
    const slug=plain(b.topicSlug,140);if(!/^[a-z0-9][a-z0-9-]{0,139}$/.test(slug))return res.status(400).json({error:'Choose a valid learning topic.'});
+   const topic=await db.query('SELECT slug FROM learning_topics WHERE slug=$1',[slug]);if(!topic.rows.length&&!STATIC_LEARNING_SLUGS.has(slug))return res.status(404).json({error:'Learning topic not found.'});
    const link=await db.query('INSERT INTO research_note_links(user_id,note_id,learning_topic_slug) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING id',[user,noteId,slug]);
    return res.json({linked:true,alreadyLinked:!link.rows.length});
   }

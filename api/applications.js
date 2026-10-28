@@ -42,6 +42,9 @@ export default async function(req,res){
  }
  if(req.method==='POST'&&b.action==='delete-scheduled-interview'){
   const interviewId=Number(b.interviewId);
+  const owned=await db.query('SELECT id FROM application_interviews WHERE id=$1 AND user_id=$2',[interviewId,user]);
+  if(!owned.rows.length)return res.status(404).json({error:'Scheduled interview not found.'});
+  await db.query("DELETE FROM career_reminders WHERE user_id=$1 AND related_type='application_interview' AND related_id=$2",[user,String(interviewId)]);
   const deleted=await db.query('DELETE FROM application_interviews WHERE id=$1 AND user_id=$2 RETURNING id',[interviewId,user]);
   if(!deleted.rows.length)return res.status(404).json({error:'Scheduled interview not found.'});
   return res.json({deleted:true});
@@ -93,7 +96,11 @@ export default async function(req,res){
  if(!Number.isSafeInteger(id)||id<1)return res.status(400).json({error:'Valid application ID required.'});
  const own=await db.query('SELECT id FROM job_applications WHERE id=$1 AND user_id=$2',[id,user]);
  if(!own.rows.length)return res.status(404).json({error:'Job application not found.'});
- if(req.method==='DELETE'){await db.query('DELETE FROM job_applications WHERE id=$1 AND user_id=$2',[id,user]);await logActivity(user,'job_application_deleted','job_application',id,{});return res.json({deleted:true})}
+ if(req.method==='DELETE'){
+  await db.query("DELETE FROM career_reminders WHERE user_id=$1 AND related_type='application_interview' AND related_id IN (SELECT ai.id::text FROM application_interviews ai WHERE ai.user_id=$1 AND ai.application_id=$2)",[user,id]);
+  await db.query('DELETE FROM job_applications WHERE id=$1 AND user_id=$2',[id,user]);
+  await logActivity(user,'job_application_deleted','job_application',id,{});return res.json({deleted:true})
+ }
  const status=b.status===undefined?null:String(b.status);
  if(status&&!statuses.has(status))return res.status(400).json({error:'Unsupported application status.'});
  const url=b.applicationUrl===undefined?null:(b.applicationUrl?(()=>{try{const u=new URL(String(b.applicationUrl));return ['http:','https:'].includes(u.protocol)&&!u.username&&!u.password?u.href:undefined}catch{return undefined}})():null);
