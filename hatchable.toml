@@ -148,3 +148,11 @@ write = "own"
 [db.tables.user_learning_resources]
 read = "own"
 write = "own"
+
+[db.tables.coding_submissions]
+read = "own"
+write = "own"
+
+[db.tables.saved_jobs]
+read = "own"
+write = "own"

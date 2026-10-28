@@ -21,6 +21,8 @@ function plain(value, max = 500) {
     .trim()
     .slice(0, max);
 }
+function numericSalary(value) { if(value==null||value==='')return null;const n=Number(String(value).replace(/[\s,]/g,''));return Number.isFinite(n)&&n>=0?n:null; }
+function normalizeSalaryPeriod(value) { const s=String(value||'').toLowerCase();if(/hour/.test(s))return 'hourly';if(/month/.test(s))return 'monthly';if(/year|annual|annum/.test(s))return 'annual';return 'unknown'; }
 function asDate(value) {
   if (value == null || value === '') return null;
   const date = typeof value === 'number'
@@ -34,6 +36,28 @@ function validUrl(value) {
     return ['http:', 'https:'].includes(u.protocol) ? u.href : '';
   } catch { return ''; }
 }
+function experienceRequirement(j, description, seniority) {
+  const direct = plain(j.experienceRequired || j.experience_required || j.experience || j.jobExperience || j.yearsExperience || '', 120);
+  if (direct) return direct;
+  const text = String(description || '');
+  const match = text.match(/\b(?:\d+\s*(?:-|to)\s*\d+|\d+\+?)\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+)?experience\b/i)
+    || text.match(/\b(?:entry[- ]level|junior|mid[- ]level|senior|staff|principal)\b/i);
+  return plain(match && match[0] || seniority || '', 120);
+}
+function experienceMatches(job, filter) {
+  if (!filter || filter === 'any') return true;
+  const raw = String(job.experienceRequirements || job.seniority || '').toLowerCase();
+  const text = [job.title, job.description, raw].join(' ').toLowerCase();
+  const range = raw.match(/(\d+)\s*(?:-|to)\s*(\d+)\s*(?:years?|yrs?)/i);
+  const single = raw.match(/(\d+)\s*\+?\s*(?:years?|yrs?)/i);
+  const min = range ? Number(range[1]) : single ? Number(single[1]) : null;
+  const max = range ? Number(range[2]) : single && /\+/.test(single[0]) ? Infinity : single ? Number(single[1]) : null;
+  if (filter === '0-2') return /\bintern(?:ship)?\b|\bentry[- ]level\b|\bjunior\b|\bgraduate\b|\b0.?2 years\b/i.test(text) || (min !== null && min <= 2);
+  if (filter === '3-5') return /\bmid[- ]level\b|\bintermediate\b|\b3.?5 years\b/i.test(text) || (min !== null && min <= 5 && (max === Infinity || max >= 3));
+  if (filter === '5+') return /\bsenior\b|\bstaff\b|\bprincipal\b|\blead\b|\b5\+ years\b/i.test(text) || (min !== null && min >= 5);
+  return true;
+}
+
 function normalizeHimalayas(j) {
   const title = plain(j.title, 180);
   const company = plain(j.companyName, 160);
@@ -48,7 +72,8 @@ function normalizeHimalayas(j) {
     title, company, location, remote: true,
     employmentType: plain(j.employmentType, 60),
     seniority: Array.isArray(j.seniority) ? j.seniority.map(x => plain(x, 40)).join(', ') : '',
-    salary: plain(salary, 100),
+    experienceRequirements: experienceRequirement(j, j.excerpt || j.description, Array.isArray(j.seniority) ? j.seniority.map(x => plain(x,40)).join(', ') : ''),
+    salary: plain(salary, 100), salaryProvided: Boolean(salary), salaryMin:numericSalary(j.minSalary), salaryMax:numericSalary(j.maxSalary), salaryCurrency:plain(j.currency||'',10).toUpperCase(), salaryPeriod:normalizeSalaryPeriod(j.salaryPeriod),
     description: plain(j.excerpt || j.description, 420),
     publishedAt: asDate(j.pubDate),
     expiresAt: asDate(j.expiryDate),
@@ -70,7 +95,8 @@ function normalizeJobicy(j) {
     title, company, location: geo, remote: /remote|worldwide|anywhere/i.test(geo),
     employmentType: Array.isArray(j.jobType) ? j.jobType.map(x => plain(x, 40)).join(', ') : plain(j.jobType, 60),
     seniority: plain(j.jobLevel, 60),
-    salary: plain(j.salary || j.annualSalary || '', 100),
+    experienceRequirements: experienceRequirement(j, j.jobExcerpt || j.jobDescription, plain(j.jobLevel,60)),
+    salary: plain(j.salary || j.annualSalary || '', 100), salaryProvided: Boolean(j.salary || j.annualSalary || j.minSalary || j.maxSalary), salaryMin:numericSalary(j.minSalary??j.salaryMin??j.annualSalaryMin), salaryMax:numericSalary(j.maxSalary??j.salaryMax??j.annualSalaryMax), salaryCurrency:plain(j.salaryCurrency||j.currency||'',10).toUpperCase(), salaryPeriod:normalizeSalaryPeriod(j.salaryPeriod||(j.annualSalary?'annual':'')),
     description: plain(j.jobExcerpt || j.jobDescription, 420),
     publishedAt: asDate(j.pubDate || j.datePosted),
     applyUrl: url, jobUrl: url,
@@ -90,7 +116,8 @@ function normalizeRemotive(j) {
     remote: true,
     employmentType: plain(j.job_type, 60),
     seniority: '',
-    salary: plain(j.salary, 100),
+    experienceRequirements: experienceRequirement(j, j.description, ''),
+    salary: plain(j.salary, 100), salaryProvided: Boolean(j.salary), salaryMin:numericSalary(j.salaryMin??j.minSalary), salaryMax:numericSalary(j.salaryMax??j.maxSalary), salaryCurrency:plain(j.salaryCurrency||j.currency||'',10).toUpperCase(), salaryPeriod:normalizeSalaryPeriod(j.salaryPeriod),
     description: plain(j.description, 420),
     publishedAt: asDate(j.publication_date),
     applyUrl: url, jobUrl: url,
@@ -139,6 +166,17 @@ export default async function(req, res) {
   const q = String(req.query?.q || '').trim().slice(0, 100);
   const location = String(req.query?.location || '').trim().slice(0, 100);
   const stage = String(req.query?.stage || '').trim().slice(0, 40);
+  const companyFilter=String(req.query?.company||'').trim().slice(0,100).toLowerCase();
+  const sourceFilter=String(req.query?.source||'').trim().slice(0,60).toLowerCase();
+  const skillsFilter=String(req.query?.skills||'').trim().slice(0,120).toLowerCase();
+  const workMode=String(req.query?.workMode||'any').trim().slice(0,20).toLowerCase();
+  const experienceFilter=String(req.query?.experience||'any').trim().slice(0,20).toLowerCase();
+  const salaryFilter=String(req.query?.salary||'any').trim().slice(0,20).toLowerCase();
+  const salaryCurrency=String(req.query?.salaryCurrency||'any').trim().slice(0,10).toUpperCase();
+  const salaryPeriod=String(req.query?.salaryPeriod||'any').trim().slice(0,20).toLowerCase();
+  const minSalaryRaw=req.query?.minSalary,maxSalaryRaw=req.query?.maxSalary;
+  const minSalary=minSalaryRaw==null||String(minSalaryRaw).trim()===''?null:Number(minSalaryRaw);
+  const maxSalary=maxSalaryRaw==null||String(maxSalaryRaw).trim()===''?null:Number(maxSalaryRaw);
   const force = String(req.query?.refresh || '') === '1';
   let feed;
   if (!force && Date.now() - feedCache.fetchedAt < CACHE_MS && feedCache.jobs.length) {
@@ -148,10 +186,20 @@ export default async function(req, res) {
   }
   const ql = q.toLowerCase(), ll = location.toLowerCase();
   let jobs = feed.jobs.filter(j => {
-    const haystack = [j.title, j.company, j.location, j.description, ...(j.tags || []), j.employmentType, j.seniority].join(' ').toLowerCase();
+    const haystack = [j.title, j.company, j.location, j.description, ...(j.tags || []), j.employmentType, j.seniority, j.experienceRequirements].join(' ').toLowerCase();
     const matchQ = !ql || haystack.includes(ql);
-    const matchLocation = !ll || /remote|worldwide|anywhere/i.test(ll) && j.remote || haystack.includes(ll);
-    const roleMeta = [j.title, j.employmentType, j.seniority, ...(j.tags || [])].join(' ').toLowerCase();
+    const matchLocation = !ll || (/remote|worldwide|anywhere/i.test(ll) && j.remote) || haystack.includes(ll);
+    const roleMeta = [j.title, j.employmentType, j.seniority, j.experienceRequirements, ...(j.tags || [])].join(' ').toLowerCase();
+    const matchCompany = !companyFilter || j.company.toLowerCase().includes(companyFilter);
+    const matchSource = !sourceFilter || j.source.toLowerCase().includes(sourceFilter);
+    const skillTerms = skillsFilter.split(/[;,]+/).map(x=>x.trim()).filter(Boolean);
+    const matchSkills = !skillTerms.length || skillTerms.every(term=>haystack.includes(term));
+    const matchMode = !workMode || workMode==='any' || (workMode==='remote' ? !!j.remote : workMode==='onsite' ? (!j.remote && /onsite|on-site|office|on site/i.test([j.location,j.description].join(' '))) : workMode==='hybrid' ? /hybrid/i.test([j.location,j.description,j.employmentType].join(' ')) : true);
+    const matchExperience = experienceMatches(j,experienceFilter);
+    const hasSalaryBounds=minSalary!==null||maxSalary!==null;
+    const matchSalaryAvailability=salaryFilter!=='provided' || Boolean(j.salaryProvided || j.salary);
+    const matchSalaryRange=!hasSalaryBounds || (Number.isFinite(minSalary??0)&&Number.isFinite(maxSalary??0)&&(!hasSalaryBounds||minSalary===null||maxSalary===null||minSalary<=maxSalary)&&salaryCurrency!=='ANY'&&salaryPeriod!=='any'&&j.salaryMin!=null&&j.salaryMax!=null&&j.salaryCurrency===salaryCurrency&&j.salaryPeriod===salaryPeriod&&(minSalary===null||j.salaryMax>=minSalary)&&(maxSalary===null||j.salaryMin<=maxSalary));
+    const matchSalary=matchSalaryAvailability&&matchSalaryRange;
     const matchStage = !stage || stage === 'any' || (stage === 'student'
       ? /\bintern(?:ship)?\b|\bentry[- ]level\b|\bjunior\b|\bgraduate\b|\btrainee\b|\bapprentice\b|\bstudent\b|\bearly career\b/i.test(roleMeta)
       : stage === 'professional'
@@ -159,19 +207,27 @@ export default async function(req, res) {
         : stage === 'entrepreneur'
           ? /founder|startup|business development|sales|growth|marketing|freelance|contract|consultant|partnership|account executive/i.test(roleMeta + ' ' + j.description.toLowerCase())
           : true);
-    return matchQ && matchLocation && matchStage;
+    return matchQ && matchLocation && matchStage && matchCompany && matchSource && matchSkills && matchMode && matchExperience && matchSalary;
   });
   jobs.sort((a, b) => (Date.parse(b.publishedAt || '') || 0) - (Date.parse(a.publishedAt || '') || 0));
   const max = Math.min(80, Math.max(1, Number(req.query?.limit) || 60));
   jobs = jobs.slice(0, max);
-  if (!feed.jobs.length && feed.sources.every(s => s.status !== 'live')) {
-    return res.status(502).json({
-      error: 'All live job feeds are temporarily unavailable. No sample or placeholder jobs are shown. Retry in a few minutes.',
-      jobs: [], sources: feed.sources, fetchedAt: new Date().toISOString(), cached: false
-    });
-  }
+  const allFeedsUnavailable=!feed.jobs.length&&feed.sources.every(s=>s.status!=='live');
+  const portalTerms=[q||'software engineer',location].filter(Boolean).join(' ');
+  const portalSearches=[
+    {name:'Google Jobs / Search',url:'https://www.google.com/search?q='+encodeURIComponent(portalTerms+' jobs'),kind:'External search results; verify the employer and original posting.'},
+    {name:'Google Careers',url:'https://careers.google.com/jobs/results/',kind:'Official company career site; search roles and locations on Google Careers.'},
+    {name:'Microsoft Careers',url:'https://careers.microsoft.com/v2/global/en/home.html',kind:'Official company career site; verify work site and experience requirements.'},
+    {name:'Amazon Jobs',url:'https://www.amazon.jobs/en',kind:'Official Amazon career site with location and experience filters.'},
+    {name:'Meta Careers',url:'https://www.metacareers.com/jobs/',kind:'Official Meta career site; sign-in or location restrictions may apply.'},
+    {name:'LinkedIn Jobs',url:'https://www.linkedin.com/jobs/search/?keywords='+encodeURIComponent(q||'software engineer')+(location?'&location='+encodeURIComponent(location):''),kind:'Opens LinkedIn search; sign-in and availability depend on LinkedIn.'},
+    {name:'Naukri',url:'https://www.naukri.com/',kind:'Official job-search portal; enter the same role and location there.'},
+    {name:'Wellfound',url:'https://wellfound.com/jobs',kind:'Startup roles on the publisher site; inspect location and experience eligibility.'}
+  ];
   return res.json({
-    jobs, total: jobs.length, sources: feed.sources,
+    jobs, total: jobs.length, sources: feed.sources, portalSearches,
+    error:allFeedsUnavailable?'All connected live job feeds are temporarily unavailable. No sample or placeholder listings are shown; use the official career portals below or retry later.':'',
+    filtersApplied:{q,location,stage,company:companyFilter,source:sourceFilter,skills:skillsFilter,workMode,experience:experienceFilter,salary:salaryFilter,minSalary,maxSalary,salaryCurrency,salaryPeriod},
     fetchedAt: new Date(feed.fetchedAt).toISOString(),
     cached: Date.now() - feed.fetchedAt > 1000,
     disclaimer: 'Live remote job feeds from third-party publishers. Listings can close or change; confirm details on the source before applying. CareerOS does not auto-submit applications.'
