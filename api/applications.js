@@ -79,7 +79,7 @@ export default async function(req,res){
  if(req.method==='POST'){
   const company=clean(b.company,160),title=clean(b.jobTitle,180),url=clean(b.applicationUrl,600);
   if(company.length<2||title.length<2)return res.status(400).json({error:'Company and job title are required.'});
-  if(url){try{const u=new URL(url);if(!['http:','https:'].includes(u.protocol))throw Error()}catch{return res.status(400).json({error:'Application URL must be valid http or https.'})}}
+  if(url){try{const u=new URL(url);if(!['http:','https:'].includes(u.protocol)||u.username||u.password)throw Error()}catch{return res.status(400).json({error:'Application URL must be valid http or https without embedded credentials.'})}}
   const status=statuses.has(b.status)?b.status:'interested';
   const min=b.salaryMinInr==null||b.salaryMinInr===''?null:Number(b.salaryMinInr),max=b.salaryMaxInr==null||b.salaryMaxInr===''?null:Number(b.salaryMaxInr);
   if((min!==null&&(!Number.isSafeInteger(min)||min<0))||(max!==null&&(!Number.isSafeInteger(max)||max<0))||(min!==null&&max!==null&&max<min))return res.status(400).json({error:'Salary range must use valid non-negative INR values, with maximum no less than minimum.'});
