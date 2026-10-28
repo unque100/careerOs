@@ -2,7 +2,7 @@ import { db } from 'hatchable';
 import { respondToApiError } from 'lib/api-errors.js';
 import { logActivity, consumeRateLimit } from 'lib/career.js';
 export const access='user';
-export const methods=['GET','POST'];
+export const methods=['GET','POST','DELETE'];
 
 const JUDGE0='https://ce.judge0.com';
 const MAX_CODE=24000, MAX_CASE_INPUT=5000, MAX_CASE_OUTPUT=3000;
@@ -106,6 +106,15 @@ async function handle(req,res){
   if(dateNums.length){const today=Date.parse(new Date().toISOString().slice(0,10)+'T00:00:00Z'),age=Math.round((today-dateNums[0])/86400000);if(age<=1){currentStreak=1;let prev=dateNums[0];for(let i=1;i<dateNums.length;i++){if(Math.round((prev-dateNums[i])/86400000)!==1)break;currentStreak++;prev=dateNums[i]}}}
   const totals=aggregate.rows[0]||{};const stats={...totals,accuracy:Number(totals.submissions||0)?Math.round(Number(totals.accepted||0)/Number(totals.submissions||0)*100):0,currentStreak,longestStreak,activeDays:dateNums.length};
   return res.json({submissions:r.rows,stats});
+ }
+ if(req.method==='DELETE'){
+  const id=Number((req.body||{}).id);if(!Number.isSafeInteger(id)||id<1)return res.status(400).json({error:'Valid coding submission ID required.'});
+  const owned=await db.query('SELECT id,status,problem_title FROM coding_submissions WHERE id=$1 AND user_id=$2',[id,user]);
+  if(!owned.rows.length)return res.status(404).json({error:'Coding submission not found.'});
+  if(owned.rows[0].status==='Pending')return res.status(409).json({error:'A pending sandbox run cannot be deleted until it finishes or is resolved.'});
+  await db.query('DELETE FROM coding_submissions WHERE id=$1 AND user_id=$2',[id,user]);
+  await logActivity(user,'coding_submission_deleted','coding_submission',id,{status:owned.rows[0].status});
+  return res.json({deleted:true});
  }
  const b=req.body||{},action=cleanText(b.action,40),slug=cleanText(b.problemSlug||'',180),title=cleanText(b.problemTitle||'',180)||PROBLEMS[slug]?.title||'Custom practice',language=cleanText(b.language,30).toLowerCase(),sourceCode=cleanText(b.sourceCode,MAX_CODE);
  const requestLimit=await consumeRateLimit(user,action==='poll'?'code-submission-poll':'code-submissions',action==='poll'?30:action==='submit'?5:10,60);
