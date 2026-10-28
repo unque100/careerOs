@@ -48,6 +48,6 @@ export default async function(req,res){
   profile,profileCompletion,goals,roadmaps,tasks,roadmapProgress:{total:taskTotal,completed:taskCompleted,percent:taskTotal?Math.round(taskCompleted/taskTotal*100):0},applications,applicationStatuses:appStatuses,
   interviews:{...interviews,upcoming:n(upcomingR.rows.length)},upcomingInterviews:upcomingR.rows,
   learning,dsa,savedJobs:{total:n(savedR.rows[0]?.total)},resumeVersions:{total:n(cvR.rows[0]?.versions),latest:latestResume.rows,cvUpdatedAt:currentCv.rows[0]?.updated_at||null},
-  researchNotes:notes,aiUsage,todayTasks:due.rows,followUps:followups.rows,nextBestActions:nextBestActions.sort((a,b)=>a.priority-b.priority).slice(0,5),dailyQuestion,emptyState:!profile||!profile.onboarding_completed
+  researchNotes:notes,aiUsage,todayTasks:due.rows,followUps:followups.rows,nextBestActions:nextBestActions.sort((a,b)=>a.priority-b.priority).slice(0,5),dailyQuestion,emptyState:!profile
  });
 }
