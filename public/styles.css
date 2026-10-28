@@ -665,4 +665,93 @@
 @media(max-width:1050px){.job-discovery-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.job-portal-links{grid-template-columns:repeat(2,minmax(0,1fr))}.sd-framework-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.job-discovery-filters{grid-template-columns:1fr}.job-portal-links{grid-template-columns:1fr}.sd-framework-grid{grid-template-columns:1fr}.compiler-test-panels{grid-template-columns:1fr}.compiler-action-group{align-items:stretch}.compiler-action-group>*{flex:1}.submission-history-item summary{grid-template-columns:auto 1fr;align-items:start}.submission-history-item summary>span,.submission-history-item summary>small{grid-column:2}.saved-job-row{align-items:flex-start;flex-direction:column}.saved-job-actions{width:100%}.job-listing-facts{grid-template-columns:1fr}}
 
+/* Application tracker: job-specific prep, interview schedules and progress */
+.application-record-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.application-record-card{display:flex;flex-direction:column;gap:11px;min-width:0}
+.application-record-card>h3{overflow-wrap:anywhere}
+.app-card-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.app-card-facts>span{display:grid;gap:4px;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:9px;line-height:1.6;overflow-wrap:anywhere}
+.app-card-facts>span>b{font-size:8px;text-transform:uppercase;letter-spacing:.35px;color:var(--muted)}
+.app-detail-editor{border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.app-detail-editor>summary{padding:11px 12px;background:var(--bg);cursor:pointer;color:var(--ink);font-size:10px;font-weight:800}
+.app-detail-editor>form,.app-detail-editor>.scheduled-interview-list,.app-detail-editor>.linked-record-list,.app-detail-editor>.research-link-actions,.app-detail-editor>p,.app-detail-editor>h4,.app-detail-editor>ul{margin:10px 12px}
+.app-update-form .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.app-schedule-form .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.app-schedule-form .span-2,.app-update-form .span-2{grid-column:1/-1}
+.application-record-card input,.application-record-card select,.application-record-card textarea{max-width:100%;min-width:0}
+.application-card-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:auto;padding-top:10px;border-top:1px solid var(--line)}
+.scheduled-interview-list{display:grid;gap:8px;padding-bottom:10px}
+.scheduled-interview-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--line);border-radius:8px}
+.scheduled-interview-row>div:first-child{display:grid;gap:5px;min-width:0}
+.scheduled-interview-row b{font:800 10px Manrope,sans-serif;overflow-wrap:anywhere}
+.scheduled-interview-row small{font-size:9px;line-height:1.6;color:var(--muted);overflow-wrap:anywhere}
+.scheduled-interview-row .form-actions{margin:0;align-items:center;flex-wrap:wrap}
+.linked-record-list{display:grid;gap:6px}
+.linked-record-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.linked-record-row:last-child{border-bottom:0}
+.linked-record-row>div{display:grid;gap:4px;min-width:0}
+.linked-record-row b{font-size:10px;overflow-wrap:anywhere}
+.linked-record-row small{font-size:9px;color:var(--muted);line-height:1.5}
+.app-link-task-form,.app-link-mock-form{display:grid;gap:8px;padding:10px 12px;margin:10px 0;border:1px dashed var(--line2);border-radius:8px}
+.app-link-task-form label,.app-link-mock-form label{font-size:9px;color:var(--muted)}
+.app-link-task-form select,.app-link-mock-form select{width:100%;padding:9px;border:1px solid var(--line2);border-radius:7px;background:var(--bg);color:var(--ink);font-size:10px}
+.app-upcoming-panel{margin-top:15px}
+.upcoming-interview-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.upcoming-interview-item{display:grid;align-content:start;gap:7px;padding:13px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.upcoming-interview-item h3{font:800 11px Manrope,sans-serif;margin:0}
+.upcoming-interview-item p{margin:0;font-size:9px;line-height:1.65;color:var(--muted);overflow-wrap:anywhere}
+.app-pipeline-panel{margin-top:15px}
+
+/* Research Notes */
+.research-create-panel,.research-library-panel{margin-top:15px}
+.research-bookmark-filter{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);font-size:10px;color:var(--ink)}
+.research-bookmark-filter input{width:15px;height:15px;accent-color:var(--violet)}
+.research-note-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:15px}
+.research-note-card{display:flex;flex-direction:column;gap:10px;min-width:0;padding:15px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--shadow-card)}
+.research-note-card>h3{font:800 14px/1.4 Manrope,sans-serif;margin:0;overflow-wrap:anywhere}
+.research-note-card>p{font-size:10px;line-height:1.75;margin:0;overflow-wrap:anywhere}
+.research-note-content,.research-note-edit,.research-note-links{border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.research-note-content>summary,.research-note-edit>summary,.research-note-links>summary{padding:11px 12px;cursor:pointer;background:var(--bg);font-size:10px;font-weight:800;color:var(--ink)}
+.research-note-body{padding:12px;display:grid;gap:11px;min-width:0}
+.research-note-body h4{margin:5px 0 0;font:800 10px Manrope,sans-serif;color:var(--navy)}
+.research-note-body p,.research-note-body li{font-size:10px;line-height:1.75;color:var(--ink);overflow-wrap:anywhere}
+.research-note-body ol,.research-note-body ul{padding-left:19px;margin:0;display:grid;gap:7px}
+.research-concepts{display:grid;gap:8px}
+.research-concepts>div,.research-example{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg)}
+.research-concepts b,.research-example b{font:800 10px Manrope,sans-serif;color:var(--ink)}
+.research-concepts p,.research-example p{margin:5px 0 0}
+.research-snippet{display:grid;gap:7px;border:1px solid var(--line);border-radius:8px;padding:10px;min-width:0}
+.research-snippet>div{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.research-snippet>div>b{font-size:9px}
+.research-snippet small{font-size:9px;color:var(--muted)}
+.research-snippet pre{max-width:100%;overflow:auto;white-space:pre;overflow-wrap:normal;background:#101827;color:#e1eaf8;border-radius:7px;padding:12px;font:10px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace}
+.research-note-update-form{display:grid;gap:11px;padding:12px}
+.research-note-update-form .field{min-width:0}
+.research-note-update-form input,.research-note-update-form textarea{max-width:100%;min-width:0;width:100%}
+.research-note-update-form .form-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.research-note-links h4{font:800 10px Manrope,sans-serif;margin:12px 12px 6px}
+.research-note-links>ul{margin:0 12px;padding-left:18px;display:grid;gap:7px}
+.research-note-links>ul li{font-size:9px;overflow-wrap:anywhere}
+.research-link-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px}
+.research-link-topic-form,.research-link-task-form{display:grid;align-content:start;gap:8px;min-width:0}
+.research-link-topic-form label,.research-link-task-form label{font-size:9px;color:var(--muted)}
+.research-link-topic-form select,.research-link-task-form select{width:100%;min-width:0;padding:8px;border:1px solid var(--line2);border-radius:7px;background:var(--bg);color:var(--ink);font-size:9px}
+
+/* Dashboard: genuine progress snapshots and next-best action */
+.dashboard-stage-list{display:grid;gap:12px;margin-top:12px}
+.dashboard-stage-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;font-size:10px}
+.dashboard-stage-row>b{font:800 11px Manrope,sans-serif}
+.dashboard-stage-track{grid-column:1/-1;height:5px;border-radius:8px;background:var(--line);overflow:hidden}
+.dashboard-stage-track>i{display:block;height:100%;border-radius:8px;background:var(--violet)}
+.dashboard-next-action-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.dashboard-next-action{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:13px;border:1px solid var(--line);border-radius:10px;background:var(--bg);min-width:0}
+.dashboard-next-action>b{font:800 11px Manrope,sans-serif;overflow-wrap:anywhere}
+.dashboard-next-action>p{font-size:10px;color:var(--muted);line-height:1.7;margin:0;flex:1;overflow-wrap:anywhere}
+.dashboard-next-action .btn{margin-top:3px}
+.dashboard-library-snapshot{margin-top:15px}
+.dashboard-upcoming-list{display:grid;gap:6px}
+:root[data-theme="dark"] .app-card-facts>span,:root[data-theme="dark"] .app-detail-editor>summary,:root[data-theme="dark"] .research-note-content>summary,:root[data-theme="dark"] .research-note-edit>summary,:root[data-theme="dark"] .research-note-links>summary,:root[data-theme="dark"] .research-example,:root[data-theme="dark"] .research-concepts>div,:root[data-theme="dark"] .upcoming-interview-item{background:#111a2a}
+@media(max-width:1050px){.application-record-grid,.research-note-grid{grid-template-columns:1fr}.upcoming-interview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-next-action-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.application-record-grid,.research-note-grid,.upcoming-interview-grid,.dashboard-next-action-grid{grid-template-columns:1fr}.app-update-form .form-grid,.app-schedule-form .form-grid{grid-template-columns:1fr}.app-update-form .span-2,.app-schedule-form .span-2{grid-column:auto}.research-link-actions{grid-template-columns:1fr}.scheduled-interview-row{flex-direction:column}.scheduled-interview-row .form-actions{width:100%}}
+
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}

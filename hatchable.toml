@@ -156,3 +156,23 @@ write = "own"
 [db.tables.saved_jobs]
 read = "own"
 write = "own"
+
+[db.tables.application_roadmap_tasks]
+read = "own"
+write = "own"
+
+[db.tables.application_interview_sessions]
+read = "own"
+write = "own"
+
+[db.tables.application_interviews]
+read = "own"
+write = "own"
+
+[db.tables.research_notes]
+read = "own"
+write = "own"
+
+[db.tables.research_note_links]
+read = "own"
+write = "own"

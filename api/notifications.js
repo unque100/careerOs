@@ -28,6 +28,11 @@ async function syncTrackerNotifications(user) {
     const at=new Date(x.next_follow_up_at).toISOString();
     await insertNotification(user,{dedupeKey:'job-followup:'+x.id+':'+at,kind:'job_follow_up',title:'Job follow-up due',body:x.company+' · '+x.job_title+' — follow up on your application.',href:'https://careeros-beg4.hatchable.site/?pane=jobs',sourceType:'job_application',sourceId:x.id});
   }
+  const scheduled=await db.query("SELECT ai.id,ai.application_id,ai.title,ai.scheduled_at,ai.reminder_at,ai.format,a.company,a.job_title FROM application_interviews ai JOIN job_applications a ON a.id=ai.application_id AND a.user_id=ai.user_id WHERE ai.user_id=$1 AND ai.status='scheduled' AND ai.scheduled_at>now() AND COALESCE(ai.reminder_at,ai.scheduled_at-interval '1 hour')<=now()+interval '24 hours' ORDER BY COALESCE(ai.reminder_at,ai.scheduled_at-interval '1 hour') LIMIT 50",[user]);
+  for(const x of scheduled.rows) {
+    const at=new Date(x.reminder_at||new Date(new Date(x.scheduled_at).getTime()-3600000)).toISOString();
+    await insertNotification(user,{dedupeKey:'application-interview:'+x.id+':'+at,kind:'interview',title:'Upcoming job interview',body:x.company+' · '+x.job_title+' — '+x.title+' at '+new Date(x.scheduled_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Kolkata'})+'.',href:'https://careeros-beg4.hatchable.site/?pane=jobs',sourceType:'application_interview',sourceId:x.id});
+  }
   const tasks=await db.query("SELECT id,title,category,due_date,status FROM roadmap_tasks WHERE user_id=$1 AND due_date IS NOT NULL AND due_date <= CURRENT_DATE+1 AND status IN ('todo','in_progress') ORDER BY due_date ASC LIMIT 40",[user]);
   for(const x of tasks.rows) {
     await insertNotification(user,{dedupeKey:'roadmap-task:'+x.id+':'+x.due_date,kind:'task_due',title:'Roadmap task due',body:x.title+' — '+x.category+' task due '+x.due_date+'.',href:'https://careeros-beg4.hatchable.site/?pane=roadmap',sourceType:'roadmap_task',sourceId:x.id});
