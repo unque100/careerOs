@@ -1,13 +1,16 @@
 import { db } from 'hatchable';
-import { clean, logActivity } from 'lib/career.js';
+import { clean, logActivity, parseDate, consumeRateLimit } from 'lib/career.js';
+import { respondToApiError } from 'lib/api-errors.js';
 export const access = 'user';
 export const methods = ['GET','POST','PUT'];
 const stages=new Set(['student','fresh_graduate','working_professional','job_seeker','career_switcher','promotion_seeker','entrepreneur','founder']);
 const styles=new Set(['reading','videos','practice','projects','mixed']);
 const prefs=new Set(['onsite','hybrid','remote','flexible']);
-function parseHttpUrl(value){const raw=clean(value,400);if(!raw)return null;try{const u=new URL(raw);return ['http:','https:'].includes(u.protocol)?u.href:undefined}catch{return undefined}}
-export default async function(req,res){
+function parseHttpUrl(value){const raw=clean(value,400);if(!raw)return null;try{const u=new URL(raw);return ['http:','https:'].includes(u.protocol)&&!u.username&&!u.password?u.href:undefined}catch{return undefined}}
+async function handle(req,res){
  const user=String(req.user.id);
+ const requestLimit=await consumeRateLimit(user,req.method==='GET'?'profile-read':'profile-write',req.method==='GET'?60:20,60);
+ if(!requestLimit.allowed)return res.status(429).json({error:'Profile requests are rate-limited. Retry in '+requestLimit.retryAfterSeconds+' seconds.',retryAfterSeconds:requestLimit.retryAfterSeconds});
  if(req.method==='GET'){
   const r=await db.query('SELECT * FROM career_profiles WHERE user_id=$1',[user]);
   const sub=await db.query("SELECT plan_id,status,expires_at FROM subscriptions WHERE user_id=$1 LIMIT 1",[user]);
@@ -22,8 +25,8 @@ export default async function(req,res){
  if(!Number.isInteger(weekly)||weekly<1||weekly>80)return res.status(400).json({error:'Weekly learning hours must be between 1 and 80.'});
  const role=clean(b.currentRole,160),target=clean(b.targetRole,160);
  if(!target)return res.status(400).json({error:'Add your target role to personalize CareerOS.'});
- const targetDate=b.targetDate==null||b.targetDate===''?null:b.targetDate;
- if(targetDate&&!/^\d{4}-\d{2}-\d{2}$/.test(targetDate))return res.status(400).json({error:'Target date must use YYYY-MM-DD.'});
+ const targetDate=b.targetDate==null||b.targetDate===''?null:parseDate(b.targetDate);
+ if(b.targetDate&&b.targetDate!==''&&!targetDate)return res.status(400).json({error:'Target date must be a real calendar date in YYYY-MM-DD format.'});
  const skillList=Array.isArray(b.currentSkills)?b.currentSkills.filter(x=>typeof x==='string').map(x=>x.trim().slice(0,80)).filter(Boolean).slice(0,50):[];
  const strengths=Array.isArray(b.strengths)?b.strengths.filter(x=>typeof x==='string').map(x=>x.trim().slice(0,160)).filter(Boolean).slice(0,20):[];
  const challenges=Array.isArray(b.challengeAreas)?b.challengeAreas.filter(x=>typeof x==='string').map(x=>x.trim().slice(0,160)).filter(Boolean).slice(0,20):[];
@@ -50,4 +53,8 @@ export default async function(req,res){
  }
  const verified=saved.rows[0];
  return res.json({profile:{...verified,current_role:verified.current_job_role},saved:true,message:'Career profile saved and verified in career_profiles.',databaseStatus:{table:'career_profiles',verified:true,profileId:verified.id,userIdSuffix:user.slice(-5),lastSavedAt:verified.updated_at||verified.created_at}});
+}
+
+export default async function(req,res){
+ try{return await handle(req,res)}catch(error){return respondToApiError('api/profile.js',error,req,res)}
 }

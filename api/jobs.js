@@ -1,4 +1,6 @@
 import { db } from 'hatchable';
+import { consumeRateLimit } from 'lib/career.js';
+import { respondToApiError } from 'lib/api-errors.js';
 
 export const access = 'user';
 export const methods = ['GET'];
@@ -162,7 +164,7 @@ async function refreshFeeds() {
   feedCache = result;
   return result;
 }
-export default async function(req, res) {
+async function handle(req, res) {
   const q = String(req.query?.q || '').trim().slice(0, 100);
   const location = String(req.query?.location || '').trim().slice(0, 100);
   const stage = String(req.query?.stage || '').trim().slice(0, 40);
@@ -178,6 +180,8 @@ export default async function(req, res) {
   const minSalary=minSalaryRaw==null||String(minSalaryRaw).trim()===''?null:Number(minSalaryRaw);
   const maxSalary=maxSalaryRaw==null||String(maxSalaryRaw).trim()===''?null:Number(maxSalaryRaw);
   const force = String(req.query?.refresh || '') === '1';
+  const requestLimit=await consumeRateLimit(String(req.user.id),force?'job-feed-refresh':'job-feed-read',force?3:30,60);
+  if(!requestLimit.allowed)return res.status(429).json({error:'Job feed requests are rate-limited. Retry in '+requestLimit.retryAfterSeconds+' seconds.',retryAfterSeconds:requestLimit.retryAfterSeconds});
   let feed;
   if (!force && Date.now() - feedCache.fetchedAt < CACHE_MS && feedCache.jobs.length) {
     feed = feedCache;
@@ -232,4 +236,8 @@ export default async function(req, res) {
     cached: Date.now() - feed.fetchedAt > 1000,
     disclaimer: 'Live remote job feeds from third-party publishers. Listings can close or change; confirm details on the source before applying. CareerOS does not auto-submit applications.'
   });
+}
+
+export default async function(req,res){
+ try{return await handle(req,res)}catch(error){return respondToApiError('api/jobs.js',error,req,res)}
 }

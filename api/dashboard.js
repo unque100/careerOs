@@ -1,8 +1,9 @@
 import { db, config } from 'hatchable';
+import { respondToApiError } from 'lib/api-errors.js';
 export const access='user';
 export const methods=['GET'];
 function n(v){return Number(v||0)}
-export default async function(req,res){
+async function handle(req,res){
  const user=String(req.user.id);
  const [profileR,goalsR,roadmapsR,tasksR,appsR,interviewsR,learningR,dsaR,usageR,savedR,cvR,upcomingR,notesR,appStatusR,subscriptionR]=await Promise.all([
   db.query('SELECT full_name,career_stage,current_job_role AS current_role,experience_years,target_role,weekly_hours,target_date,onboarding_completed,challenge_areas,current_skills,education,learning_style,preferred_location FROM career_profiles WHERE user_id=$1',[user]),
@@ -50,4 +51,8 @@ export default async function(req,res){
   learning,dsa,savedJobs:{total:n(savedR.rows[0]?.total)},resumeVersions:{total:n(cvR.rows[0]?.versions),latest:latestResume.rows,cvUpdatedAt:currentCv.rows[0]?.updated_at||null},
   researchNotes:notes,aiUsage,todayTasks:due.rows,followUps:followups.rows,nextBestActions:nextBestActions.sort((a,b)=>a.priority-b.priority).slice(0,5),dailyQuestion,emptyState:!profile
  });
+}
+
+export default async function(req,res){
+ try{return await handle(req,res)}catch(error){return respondToApiError('api/dashboard.js',error,req,res)}
 }

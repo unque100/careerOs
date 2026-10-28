@@ -1,5 +1,6 @@
 import { db } from 'hatchable';
-import { logActivity } from 'lib/career.js';
+import { respondToApiError } from 'lib/api-errors.js';
+import { logActivity, consumeRateLimit } from 'lib/career.js';
 export const access='user';
 export const methods=['GET','POST'];
 
@@ -89,7 +90,7 @@ function submissionStatus(results,tests,action,pending=false){
  return passed===results.filter(x=>!x.hidden).length?'All visible tests passed':'Some tests failed';
 }
 
-export default async function(req,res){
+async function handle(req,res){
  const user=String(req.user.id);
  if(req.method==='GET'){
   const limit=Math.max(1,Math.min(50,Math.floor(Number(req.query?.limit)||20)));
@@ -107,6 +108,8 @@ export default async function(req,res){
   return res.json({submissions:r.rows,stats});
  }
  const b=req.body||{},action=cleanText(b.action,40),slug=cleanText(b.problemSlug||'',180),title=cleanText(b.problemTitle||'',180)||PROBLEMS[slug]?.title||'Custom practice',language=cleanText(b.language,30).toLowerCase(),sourceCode=cleanText(b.sourceCode,MAX_CODE);
+ const requestLimit=await consumeRateLimit(user,action==='poll'?'code-submission-poll':'code-submissions',action==='poll'?30:action==='submit'?5:10,60);
+ if(!requestLimit.allowed)return res.status(429).json({error:'Code execution requests are rate-limited. Retry in '+requestLimit.retryAfterSeconds+' seconds.',retryAfterSeconds:requestLimit.retryAfterSeconds});
  if(action==='poll'){
   const submissionId=Number(b.submissionId);
   if(!Number.isSafeInteger(submissionId)||submissionId<1)return res.status(400).json({error:'A valid submission ID is required.'});
@@ -200,4 +203,8 @@ export default async function(req,res){
   console.error('code submit failed',cleanText(e.message,180));
   return res.status(e.status&&e.status<500?e.status:502).json({error:'Code execution service is temporarily unavailable: '+cleanText(e.message,220)});
  }
+}
+
+export default async function(req,res){
+ try{return await handle(req,res)}catch(error){return respondToApiError('api/submissions.js',error,req,res)}
 }

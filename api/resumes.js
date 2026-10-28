@@ -1,8 +1,9 @@
 import { db } from 'hatchable';
+import { respondToApiError } from 'lib/api-errors.js';
 import { clean, logActivity } from 'lib/career.js';
 export const access = 'user';
 export const methods = ['GET','POST','PUT','DELETE'];
-export default async function(req,res){
+async function handle(req,res){
  const user=String(req.user.id),b=req.body||{};
  if(req.method==='GET'){
   const r=await db.query("SELECT id,title,source_name,LEFT(raw_text,160) AS preview,version_number,status,created_at,updated_at FROM resume_documents WHERE user_id=$1 AND (source_name IS NULL OR source_name NOT LIKE 'careeros-cv-version:%') ORDER BY updated_at DESC LIMIT 50",[user]);
@@ -30,4 +31,8 @@ export default async function(req,res){
  const r=await db.query('SELECT id,title,source_name,version_number,status,created_at,updated_at FROM resume_documents WHERE id=$1 AND user_id=$2',[id,user]);
  await logActivity(user,'resume_updated','resume',id,{version:r.rows[0].version_number});
  return res.json({resume:r.rows[0]});
+}
+
+export default async function(req,res){
+ try{return await handle(req,res)}catch(error){return respondToApiError('api/resumes.js',error,req,res)}
 }

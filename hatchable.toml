@@ -176,3 +176,19 @@ write = "own"
 [db.tables.research_note_links]
 read = "own"
 write = "own"
+
+[db.tables.user_rate_limits]
+read = "member"
+write = "member"
+
+[db.tables.ai_processing_consents]
+read = "member"
+write = "member"
+
+[db.tables.document_processing_jobs]
+read = "member"
+write = "member"
+
+[[cron]]
+path = "/api/document-worker"
+schedule = "* * * * *"

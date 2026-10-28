@@ -1,5 +1,6 @@
 import { db } from 'hatchable';
-import { clean, logActivity } from 'lib/career.js';
+import { respondToApiError } from 'lib/api-errors.js';
+import { clean, logActivity, consumeRateLimit } from 'lib/career.js';
 
 export const access = 'user';
 export const methods = ['GET', 'POST'];
@@ -102,13 +103,24 @@ function cacheSet(key, value) { cache.set(key, { at: Date.now(), value }); }
 function slugify(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 function difficultyForRating(rating) { return rating == null ? 'medium' : rating <= 1200 ? 'easy' : rating <= 1800 ? 'medium' : 'hard'; }
 function asDifficulty(r) { return r === 'easy' || r === 'medium' || r === 'hard' ? r : ''; }
-async function fetchJson(url, timeoutMs = 12000) {
+async function fetchJson(url, timeoutMs = 12000, maxBytes = 5000000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const resp = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'CareerOS-learning/1.0', 'Accept': 'application/json' } });
+    const resp = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'CareerOS-learning/1.0', 'Accept': 'application/json' }, redirect:'error' });
     if (!resp.ok) throw new Error('Source returned HTTP ' + resp.status);
-    return await resp.json();
+    const advertised=Number(resp.headers.get('content-length')||0);
+    if(advertised>maxBytes)throw new Error('Source response exceeds the permitted size.');
+    let raw='';
+    const reader=resp.body&&typeof resp.body.getReader==='function'?resp.body.getReader():null;
+    if(reader){
+      const decoder=new TextDecoder();let total=0;
+      try{
+        while(true){const part=await reader.read();if(part.done)break;total+=part.value.byteLength;if(total>maxBytes){try{await reader.cancel()}catch(e){}throw new Error('Source response exceeds the permitted size.')}raw+=decoder.decode(part.value,{stream:true});}
+        raw+=decoder.decode();
+      }finally{try{reader.releaseLock()}catch(e){}}
+    }else{raw=await resp.text();if(new TextEncoder().encode(raw).byteLength>maxBytes)throw new Error('Source response exceeds the permitted size.')}
+    return JSON.parse(raw);
   } finally { clearTimeout(timer); }
 }
 async function getDsa(topicName, difficulty, user) {
@@ -165,14 +177,31 @@ async function getDsa(topicName, difficulty, user) {
   problems = problems.map(p => ({ ...p, attemptStatus: latestBySlug.get(p.slug) || 'not_started' }));
   return { topics: Object.keys(DSA_TOPICS).map(name => ({ name, ...DSA_TOPICS[name] })), selectedTopic: topic, difficulty: difficulty || 'any', focus: meta.focus, seriesWeek: meta.week, problems, stats: stats.rows[0], live, source: data.source || 'Codeforces public API', sourceUrl: data.sourceUrl || CF_API, sourceFetchedAt: data.sourceFetchedAt, sourceError };
 }
+async function fetchBoundedText(url, timeoutMs=8000, maxBytes=1800000) {
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+   const response=await fetch(url,{signal:controller.signal,redirect:'error',headers:{'User-Agent':'CareerOS-learning/1.0','Accept':'text/plain,text/markdown;q=0.9'}});
+   if(!response.ok)throw new Error('Public learning source returned HTTP '+response.status);
+   const advertised=Number(response.headers.get('content-length')||0);
+   if(advertised>maxBytes)throw new Error('Public learning source exceeds the permitted size.');
+   let raw='';
+   const reader=response.body&&typeof response.body.getReader==='function'?response.body.getReader():null;
+   if(reader){
+    const decoder=new TextDecoder();let total=0;
+    try{
+     while(true){const part=await reader.read();if(part.done)break;total+=part.value.byteLength;if(total>maxBytes){try{await reader.cancel()}catch(e){}throw new Error('Public learning source exceeds the permitted size.')}raw+=decoder.decode(part.value,{stream:true})}
+     raw+=decoder.decode();
+    }finally{try{reader.releaseLock()}catch(e){}}
+   }else{raw=await response.text();if(new TextEncoder().encode(raw).byteLength>maxBytes)throw new Error('Public learning source exceeds the permitted size.')}
+   return raw;
+  }finally{clearTimeout(timer)}
+}
 async function getSystemDesign(user) {
   const key = 'system-design-primer';
   let sourceData = cacheGet(key), live = true, sourceError = '';
   if (!sourceData) {
     try {
-      const response = await fetch(SYSTEM_DESIGN_README, { headers: { 'User-Agent': 'CareerOS-learning/1.0' } });
-      if (!response.ok) throw new Error('GitHub source returned HTTP ' + response.status);
-      const readme = await response.text();
+      const readme = await fetchBoundedText(SYSTEM_DESIGN_README,8000,1800000);
       const headings = new Set(Array.from(readme.matchAll(/^#{2,4}\s+(.+?)\s*#*\s*$/gm), m => slugify(m[1].replace(/\*\*/g, '').replace(/\[[^\]]+\]\([^)]*\)/g, '$1'))));
       const topics = SD_TOPICS.filter(t => headings.has(t[0])).map(([slug,title,category,description]) => ({
         slug: 'sd-' + slug, title, category, description,
@@ -199,8 +228,10 @@ async function getSystemDesign(user) {
   const caseStudies=SD_CASE_STUDIES.map(x=>({...x,slug:x.slug,progressStatus:(progressBySlug.get(x.slug)||{}).status||'not_started',timeSpentMinutes:Number((progressBySlug.get(x.slug)||{}).time_spent_minutes||0),notes:(progressBySlug.get(x.slug)||{}).notes||''}));
   return { topics, exercises, deepLessons, caseStudies, live, source: 'donnemartin/system-design-primer + CareerOS authored practice content', sourceUrl: sourceData.sourceUrl, sourceFetchedAt: sourceData.sourceFetchedAt, sourceError, diagramFormat:'Text architecture diagrams included in each lesson/case study.',videoDisclosure:'Video resources are curated YouTube search links for each topic; individual video IDs/durations are not fetched.' };
 }
-export default async function(req, res) {
+async function handle(req, res){
   const user = String(req.user.id);
+  const limit=await consumeRateLimit(user,req.method==='GET'?'learning-content-read':'learning-content-write',req.method==='GET'?30:60,60);
+  if(!limit.allowed)return res.status(429).json({error:'Learning requests are rate-limited. Retry in '+limit.retryAfterSeconds+' seconds.',retryAfterSeconds:limit.retryAfterSeconds});
   if (req.method === 'GET') {
     const kind = clean(req.query?.kind, 40);
     if (kind === 'dsa') {
@@ -236,4 +267,8 @@ export default async function(req, res) {
     return res.json({ progress: result.rows[0] });
   }
   return res.status(400).json({ error: 'Choose kind=dsa-attempt or kind=system-design-progress.' });
+}
+
+export default async function(req,res){
+ try{return await handle(req,res)}catch(error){return respondToApiError('api/learning-content.js',error,req,res)}
 }

@@ -1,10 +1,13 @@
 import { db } from 'hatchable';
-import { clean, logActivity } from 'lib/career.js';
+import { respondToApiError } from 'lib/api-errors.js';
+import { clean, logActivity, parseDate, consumeRateLimit } from 'lib/career.js';
 export const access = 'user';
 export const methods = ['GET','POST','PUT','DELETE'];
 const statuses=new Set(['interested','preparing','applied','recruiter_screening','assessment','technical_interview','hiring_manager','final_round','offer','accepted','rejected','withdrawn']);
-export default async function(req,res){
+async function handle(req,res){
  const user=String(req.user.id),b=req.body||{};
+ const requestLimit=await consumeRateLimit(user,req.method==='GET'?'applications-read':'applications-write',req.method==='GET'?60:40,60);
+ if(!requestLimit.allowed)return res.status(429).json({error:'Application tracker requests are rate-limited. Retry in '+requestLimit.retryAfterSeconds+' seconds.',retryAfterSeconds:requestLimit.retryAfterSeconds});
  if(req.method==='GET'){
   const r=await db.query('SELECT id,company,job_title,job_description_id,application_url,location,salary_min_inr,salary_max_inr,status,application_date,next_follow_up_at,resume_version,recruiter_contact,notes,created_at,updated_at FROM job_applications WHERE user_id=$1 ORDER BY CASE WHEN next_follow_up_at IS NULL THEN 1 ELSE 0 END,next_follow_up_at,updated_at DESC LIMIT 500',[user]);
   const stats=await db.query("SELECT count(*)::int AS total,count(*) FILTER(WHERE status NOT IN ('accepted','rejected','withdrawn'))::int AS active,count(*) FILTER(WHERE status IN ('offer','accepted'))::int AS offers,count(*) FILTER(WHERE status IN ('interested','preparing'))::int AS saved_preparing,count(*) FILTER(WHERE status='applied')::int AS applied,count(*) FILTER(WHERE status='assessment')::int AS assessments,count(*) FILTER(WHERE status IN ('recruiter_screening','technical_interview','hiring_manager','final_round'))::int AS interviews,count(*) FILTER(WHERE status='rejected')::int AS rejected,count(*) FILTER(WHERE status='withdrawn')::int AS withdrawn FROM job_applications WHERE user_id=$1",[user]);
@@ -85,10 +88,12 @@ export default async function(req,res){
   if((min!==null&&(!Number.isSafeInteger(min)||min<0))||(max!==null&&(!Number.isSafeInteger(max)||max<0))||(min!==null&&max!==null&&max<min))return res.status(400).json({error:'Salary range must use valid non-negative INR values, with maximum no less than minimum.'});
   const jd=b.jobDescriptionId==null||b.jobDescriptionId===''?null:Number(b.jobDescriptionId);
   if(jd!==null){const own=await db.query('SELECT id FROM job_descriptions WHERE id=$1 AND user_id=$2',[jd,user]);if(!own.rows.length)return res.status(404).json({error:'Saved job description not found.'})}
-  const follow=b.nextFollowUpAt||null;
-  if(follow&&Number.isNaN(Date.parse(follow)))return res.status(400).json({error:'Invalid follow-up date.'});
+  const follow=b.nextFollowUpAt?Date.parse(b.nextFollowUpAt):null;
+  if(b.nextFollowUpAt&&!Number.isFinite(follow))return res.status(400).json({error:'Invalid follow-up date/time.'});
+  const applicationDate=b.applicationDate?parseDate(b.applicationDate):null;
+  if(b.applicationDate&&!applicationDate)return res.status(400).json({error:'Application date must be a real calendar date in YYYY-MM-DD format.'});
   const sourceJobId=clean(b.sourceJobId,240)||null;
-  const r=await db.query('INSERT INTO job_applications(user_id,company,job_title,job_description_id,application_url,source_job_id,location,salary_min_inr,salary_max_inr,status,application_date,next_follow_up_at,resume_version,recruiter_contact,notes) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *',[user,company,title,jd,url||null,sourceJobId,clean(b.location,160)||null,min,max,status,b.applicationDate||null,follow,clean(b.resumeVersion,100)||null,clean(b.recruiterContact,240)||null,clean(b.notes,3000)||null]);
+  const r=await db.query('INSERT INTO job_applications(user_id,company,job_title,job_description_id,application_url,source_job_id,location,salary_min_inr,salary_max_inr,status,application_date,next_follow_up_at,resume_version,recruiter_contact,notes) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *',[user,company,title,jd,url||null,sourceJobId,clean(b.location,160)||null,min,max,status,applicationDate,follow===null?null:new Date(follow).toISOString(),clean(b.resumeVersion,100)||null,clean(b.recruiterContact,240)||null,clean(b.notes,3000)||null]);
   await logActivity(user,'job_application_created','job_application',r.rows[0].id,{status,company});
   return res.status(201).json({application:r.rows[0]});
  }
@@ -105,7 +110,15 @@ export default async function(req,res){
  if(status&&!statuses.has(status))return res.status(400).json({error:'Unsupported application status.'});
  const url=b.applicationUrl===undefined?null:(b.applicationUrl?(()=>{try{const u=new URL(String(b.applicationUrl));return ['http:','https:'].includes(u.protocol)&&!u.username&&!u.password?u.href:undefined}catch{return undefined}})():null);
   if(b.applicationUrl!==undefined&&url===undefined)return res.status(400).json({error:'Application URL must be valid http or https.'});
-  const r=await db.query('UPDATE job_applications SET status=COALESCE($3,status),notes=CASE WHEN $4::boolean THEN $5 ELSE notes END,next_follow_up_at=CASE WHEN $6::boolean THEN $7::timestamptz ELSE next_follow_up_at END,application_date=CASE WHEN $8::boolean THEN $9::date ELSE application_date END,application_url=CASE WHEN $10::boolean THEN $11::text ELSE application_url END,resume_version=CASE WHEN $12::boolean THEN $13::text ELSE resume_version END,recruiter_contact=CASE WHEN $14::boolean THEN $15::text ELSE recruiter_contact END,updated_at=now(),last_activity_at=now() WHERE id=$1 AND user_id=$2 RETURNING *',[id,user,status,b.notes!==undefined,b.notes===undefined?null:clean(b.notes,3000),b.nextFollowUpAt!==undefined,b.nextFollowUpAt||null,b.applicationDate!==undefined,b.applicationDate||null,b.applicationUrl!==undefined,url||null,b.resumeVersion!==undefined,clean(b.resumeVersion,100)||null,b.recruiterContact!==undefined,clean(b.recruiterContact,240)||null]);
+  const follow=b.nextFollowUpAt===undefined?undefined:(b.nextFollowUpAt?Date.parse(b.nextFollowUpAt):null);
+  if(b.nextFollowUpAt!==undefined&&b.nextFollowUpAt&&!Number.isFinite(follow))return res.status(400).json({error:'Follow-up date/time must be valid.'});
+  const applicationDate=b.applicationDate===undefined?undefined:(b.applicationDate?parseDate(b.applicationDate):null);
+  if(b.applicationDate!==undefined&&b.applicationDate&&!applicationDate)return res.status(400).json({error:'Application date must be a real calendar date in YYYY-MM-DD format.'});
+  const r=await db.query('UPDATE job_applications SET status=COALESCE($3,status),notes=CASE WHEN $4::boolean THEN $5 ELSE notes END,next_follow_up_at=CASE WHEN $6::boolean THEN $7::timestamptz ELSE next_follow_up_at END,application_date=CASE WHEN $8::boolean THEN $9::date ELSE application_date END,application_url=CASE WHEN $10::boolean THEN $11::text ELSE application_url END,resume_version=CASE WHEN $12::boolean THEN $13::text ELSE resume_version END,recruiter_contact=CASE WHEN $14::boolean THEN $15::text ELSE recruiter_contact END,updated_at=now(),last_activity_at=now() WHERE id=$1 AND user_id=$2 RETURNING *',[id,user,status,b.notes!==undefined,b.notes===undefined?null:clean(b.notes,3000),b.nextFollowUpAt!==undefined,follow===undefined?null:(follow===null?null:new Date(follow).toISOString()),b.applicationDate!==undefined,applicationDate===undefined?null:applicationDate,b.applicationUrl!==undefined,url||null,b.resumeVersion!==undefined,clean(b.resumeVersion,100)||null,b.recruiterContact!==undefined,clean(b.recruiterContact,240)||null]);
  await logActivity(user,'job_application_updated','job_application',id,{status:r.rows[0].status});
  return res.json({application:r.rows[0]});
+}
+
+export default async function(req,res){
+ try{return await handle(req,res)}catch(error){return respondToApiError('api/applications.js',error,req,res)}
 }

@@ -1,5 +1,6 @@
 import { db } from 'hatchable';
-import { clean, logActivity } from 'lib/career.js';
+import { respondToApiError } from 'lib/api-errors.js';
+import { clean, logActivity, consumeRateLimit } from 'lib/career.js';
 
 export const access = 'user';
 export const methods = ['GET','POST','PUT','DELETE'];
@@ -47,8 +48,10 @@ async function syncTrackerNotifications(user) {
     await insertNotification(user,{dedupeKey:'career-reminder:'+x.id+':'+at,kind:'reminder',title:x.title,body:x.description||'Your '+x.category.replaceAll('_',' ')+' reminder is due.',href:'https://careeros-beg4.hatchable.site/?pane=notifications',sourceType:'career_reminder',sourceId:x.id});
   }
 }
-export default async function(req,res) {
+async function handle(req,res){
  const user=String(req.user.id),b=req.body||{};
+ const requestLimit=await consumeRateLimit(user,req.method==='GET'?'notifications-read':'notifications-write',req.method==='GET'?30:20,60);
+ if(!requestLimit.allowed)return res.status(429).json({error:'Notification requests are rate-limited. Retry in '+requestLimit.retryAfterSeconds+' seconds.',retryAfterSeconds:requestLimit.retryAfterSeconds});
  if(req.method==='GET') {
   await db.query('INSERT INTO notification_preferences(user_id) VALUES($1) ON CONFLICT(user_id) DO NOTHING',[user]);
   await syncTrackerNotifications(user);
@@ -112,4 +115,8 @@ export default async function(req,res) {
   return res.status(201).json({attempt:r.rows[0]});
  }
  return res.status(400).json({error:'Unsupported notification action.'});
+}
+
+export default async function(req,res){
+ try{return await handle(req,res)}catch(error){return respondToApiError('api/notifications.js',error,req,res)}
 }
