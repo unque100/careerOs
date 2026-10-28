@@ -536,7 +536,7 @@
 .learning-video-note{margin:-4px 0 14px;padding:9px 11px;border-left:3px solid var(--line2);background:var(--bg);line-height:1.65}
 .learning-my-notes{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}
 .learning-my-notes summary{font-size:9px;color:var(--muted);font-weight:750;cursor:pointer}
-.learning-my-notes textarea{display:block;width:100%;margin-top:7px;padding:9px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);color:var(--ink);font:10px/1.6 inherit;resize:vertical}
+.learning-my-notes textarea{display:block;width:100%;margin-top:7px;padding:9px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);color:var(--ink);font:10px/1.6 Inter,Arial,sans-serif;resize:vertical}
 .learning-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;align-items:end}
 .learning-bookmark-filter{display:flex;align-items:center;gap:7px;font-size:9px;color:var(--muted);min-height:37px}
 .learning-bookmark-filter input{accent-color:var(--violet)}

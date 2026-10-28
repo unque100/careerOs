@@ -48,6 +48,7 @@ export default async function(req,res){
   const type=types.has(b.interviewType)?b.interviewType:'technical',difficulty=difficulties.includes(b.difficulty)?b.difficulty:'intermediate';
   const role=clean(b.targetRole,160)||'your target role',mode=modes.includes(b.mode)?b.mode:'text',companyStyle=styles.includes(b.companyStyle)?b.companyStyle:'general',programmingLanguage=languages.includes(b.programmingLanguage)?b.programmingLanguage:'language-neutral';
   const durationChoices=[15,30,45,60],durationMinutes=durationChoices.includes(Number(b.durationMinutes))?Number(b.durationMinutes):30;
+  if(mode!=='text'&&b.mediaConsent!==true)return res.status(400).json({error:'Explicit consent is required before starting an audio/video interview.'});
   const profile=(await db.query('SELECT current_job_role AS current_role,target_role,experience_years,current_skills,weekly_hours,challenge_areas FROM career_profiles WHERE user_id=$1',[user])).rows[0]||null;
   const previous=(await db.query('SELECT t.question FROM interview_turns t JOIN interview_sessions s ON s.id=t.session_id WHERE t.user_id=$1 AND s.interview_type=$2 ORDER BY t.created_at DESC LIMIT 8',[user,type])).rows.map(x=>x.question);
   const quota=await consumeAiQuota(user);
@@ -57,7 +58,7 @@ export default async function(req,res){
    const parsed=safeJson(result?.text,{question:qBank[type],evaluationCriteria:['Correctness','Reasoning','Clarity']});
    const first=clean(parsed.question,2500)||qBank[type];
    const title=clean(b.title,180)||type.replaceAll('_',' ')+' mock interview';
-   const rubric={criteria:Array.isArray(parsed.evaluationCriteria)?parsed.evaluationCriteria.slice(0,10):['Correctness','Communication','Problem solving','Complexity','Edge cases','Trade-offs'],mode,companyStyle,programmingLanguage,durationMinutes,maxQuestions:Math.min(10,Math.max(2,Math.ceil(durationMinutes/7))),adaptiveDifficulty:true,consentRequired:mode!=='text'};const s=await db.query('INSERT INTO interview_sessions(user_id,title,interview_type,difficulty,target_role,status,rubric) VALUES($1,$2,$3,$4,$5,\'in_progress\',$6::jsonb) RETURNING id,title,interview_type,difficulty,target_role,status,rubric,started_at',[user,title,type,difficulty,role,JSON.stringify(rubric)]);
+   const rubric={criteria:Array.isArray(parsed.evaluationCriteria)?parsed.evaluationCriteria.slice(0,10):['Correctness','Communication','Problem solving','Complexity','Edge cases','Trade-offs'],mode,companyStyle,programmingLanguage,durationMinutes,maxQuestions:Math.min(10,Math.max(2,Math.ceil(durationMinutes/7))),adaptiveDifficulty:true,consentRequired:mode!=='text',mediaConsentGiven:mode!=='text'&&b.mediaConsent===true};const s=await db.query('INSERT INTO interview_sessions(user_id,title,interview_type,difficulty,target_role,status,rubric) VALUES($1,$2,$3,$4,$5,\'in_progress\',$6::jsonb) RETURNING id,title,interview_type,difficulty,target_role,status,rubric,started_at',[user,title,type,difficulty,role,JSON.stringify(rubric)]);
    const t=await db.query('INSERT INTO interview_turns(session_id,user_id,turn_number,question) VALUES($1,$2,1,$3) RETURNING id,turn_number,question',[s.rows[0].id,user,first]);
    await logActivity(user,'interview_started','interview_session',s.rows[0].id,{type,difficulty});
    return res.status(201).json({session:s.rows[0],turn:t.rows[0],usage:quota});
