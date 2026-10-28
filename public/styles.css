@@ -621,6 +621,7 @@
 .submission-history-item summary>span,.submission-history-item summary>small{font-size:9px;color:var(--muted)}
 .submission-status{font-size:9px;font-weight:800;white-space:nowrap}
 .submission-status.passed,.submission-test-state.passed{color:#24845f}
+.submission-status.pending{color:#b58124}
 .submission-status.failed,.submission-test-state.failed{color:#c34a55}
 .submission-history-detail{padding:11px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .submission-history-detail p{margin:0;font-size:10px;color:var(--muted)}

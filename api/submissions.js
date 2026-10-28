@@ -123,7 +123,7 @@ export default async function(req,res){
   let latest;
   try{latest=await judge('/submissions/'+encodeURIComponent(token)+'?base64_encoded=false&fields=stdout,stderr,compile_output,message,status,time,memory')}catch(e){return res.status(502).json({error:'Could not check the sandbox run yet: '+cleanText(e.message,180),pending:true,submissionId})}
   const currentStatus=Number(latest.status?.id||0);
-  if(!STOP.has(currentStatus))return res.status(202).json({pending:true,submissionId,status:String(latest.status?.description||'In Queue'),message:'The sandbox is still processing this test. Check again shortly.'});
+  if(!STOP.has(currentStatus))return res.status(202).json({pending:true,submissionId,status:'Pending',executionStatus:String(latest.status?.description||'In Queue'),message:'The sandbox is still processing this test. Check again shortly.'});
   const currentTest=tests[currentIndex],currentResult=resultFromJudge(currentTest,latest);
   results[currentIndex]=currentResult;
   let maxRuntime=Number(runState.maxRuntime||0),maxMemory=Number(runState.maxMemory||0);
