@@ -178,16 +178,16 @@ read = "own"
 write = "own"
 
 [db.tables.user_rate_limits]
-read = "member"
-write = "member"
+read = "own"
+write = "own"
 
 [db.tables.ai_processing_consents]
-read = "member"
-write = "member"
+read = "own"
+write = "own"
 
 [db.tables.document_processing_jobs]
-read = "member"
-write = "member"
+read = "own"
+write = "own"
 
 [[cron]]
 path = "/api/document-worker"
